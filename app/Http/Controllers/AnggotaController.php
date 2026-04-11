@@ -8,14 +8,44 @@ use Illuminate\Support\Facades\Hash;
 
 class AnggotaController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        // Join manual tabel users dan anggota menggunakan Query Builder
-        $users = DB::table('users')
+        // 1. Query dasar: Join tabel users dan anggota
+        $query = DB::table('users')
             ->leftJoin('anggota', 'users.id', '=', 'anggota.user_id')
-            ->select('users.*', 'anggota.nis', 'anggota.kelas', 'anggota.jurusan', 'anggota.no_telp')
-            ->orderBy('users.id', 'desc')
-            ->get();
+            ->select(
+                'users.id', 
+                'users.nama', 
+                'users.username', 
+                'users.role', 
+                'anggota.nis', 
+                'anggota.kelas', 
+                'anggota.jurusan', 
+                'anggota.no_telp'
+            );
+
+        // 2. Logika Filter Pencarian (Nama, Username, atau NIS)
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('users.nama', 'like', "%$search%")
+                  ->orWhere('users.username', 'like', "%$search%")
+                  ->orWhere('anggota.nis', 'like', "%$search%");
+            });
+        }
+
+        // 3. Filter Berdasarkan Role
+        if ($request->filled('role')) {
+            $query->where('users.role', $request->role);
+        }
+
+        // 4. Filter Berdasarkan Kelas
+        if ($request->filled('kelas')) {
+            $query->where('anggota.kelas', $request->kelas);
+        }
+
+        // Eksekusi query dengan urutan terbaru
+        $users = $query->orderBy('users.id', 'desc')->get();
 
         return view('anggota.index', compact('users'));
     }
@@ -23,32 +53,32 @@ class AnggotaController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'nama' => 'required',
+            'nama'     => 'required',
             'username' => 'required|unique:users',
             'password' => 'required',
-            'role' => 'required'
+            'role'     => 'required'
         ]);
 
         DB::transaction(function () use ($request) {
             // Simpan ke tabel users
             $idUser = DB::table('users')->insertGetId([
-                'nama' => $request->nama,
-                'username' => $request->username,
-                'password' => Hash::make($request->password),
-                'role' => $request->role,
+                'nama'       => $request->nama,
+                'username'   => $request->username,
+                'password'   => Hash::make($request->password),
+                'role'       => $request->role,
                 'created_at' => now(),
             ]);
 
-            // Jika role siswa, isi tabel anggota
+            // Jika role siswa, isi detail ke tabel anggota
             if ($request->role == 'siswa') {
                 DB::table('anggota')->insert([
-                    'user_id' => $idUser,
-                    'nis' => $request->nis,
+                    'user_id'      => $idUser,
+                    'nis'          => $request->nis,
                     'nama_anggota' => $request->nama,
-                    'kelas' => $request->kelas,
-                    'jurusan' => $request->jurusan,
-                    'no_telp' => $request->no_telp,
-                    'created_at' => now(),
+                    'kelas'        => $request->kelas,
+                    'jurusan'      => $request->jurusan,
+                    'no_telp'      => $request->no_telp,
+                    'created_at'   => now(),
                 ]);
             }
         });
@@ -58,45 +88,43 @@ class AnggotaController extends Controller
 
     public function update(Request $request, $id)
     {
-        // Validasi input
         $request->validate([
-            'nama' => 'required',
+            'nama'     => 'required',
             'username' => 'required|unique:users,username,' . $id,
-            'role' => 'required'
+            'role'     => 'required'
         ]);
 
         DB::transaction(function () use ($request, $id) {
-            // 1. Update data User
+            // 1. Update data dasar di tabel Users
             $userData = [
-                'nama' => $request->nama,
-                'username' => $request->username,
-                'role' => $request->role,
+                'nama'       => $request->nama,
+                'username'   => $request->username,
+                'role'       => $request->role,
                 'updated_at' => now(),
             ];
 
-            // Update password hanya jika kolom password diisi
             if ($request->filled('password')) {
                 $userData['password'] = Hash::make($request->password);
             }
 
             DB::table('users')->where('id', $id)->update($userData);
 
-            // 2. Kelola Data Anggota (Siswa)
+            // 2. Kondisi Sinkronisasi Tabel Anggota
             if ($request->role == 'siswa') {
-                // updateOrInsert: Jika sudah ada di tabel anggota maka update, jika belum ada maka buat baru
+                // Gunakan updateOrInsert jika sebelumnya dia admin lalu berubah jadi siswa
                 DB::table('anggota')->updateOrInsert(
-                    ['user_id' => $id], // Pencarian berdasarkan user_id
+                    ['user_id' => $id],
                     [
-                        'nis' => $request->nis,
+                        'nis'          => $request->nis,
                         'nama_anggota' => $request->nama,
-                        'kelas' => $request->kelas,
-                        'jurusan' => $request->jurusan,
-                        'no_telp' => $request->no_telp,
-                        'updated_at' => now(),
+                        'kelas'        => $request->kelas,
+                        'jurusan'      => $request->jurusan,
+                        'no_telp'      => $request->no_telp,
+                        'updated_at'   => now(),
                     ]
                 );
             } else {
-                // Jika role diubah menjadi admin/petugas, hapus data anggotanya agar tidak duplikat
+                // Jika role diubah dari siswa ke admin, hapus data anggotanya
                 DB::table('anggota')->where('user_id', $id)->delete();
             }
         });
@@ -106,10 +134,10 @@ class AnggotaController extends Controller
 
     public function destroy($id)
     {
-        // Karena di database biasanya pakai Cascade Delete, 
-        // menghapus User akan otomatis menghapus data di tabel Anggota
+        // Menghapus di tabel users. 
+        // Pastikan di database sudah set ON DELETE CASCADE pada foreign key user_id di tabel anggota.
         DB::table('users')->where('id', $id)->delete();
         
-        return back()->with('success', 'User berhasil dihapus!');
+        return back()->with('success', 'Data berhasil dihapus!');
     }
 }
