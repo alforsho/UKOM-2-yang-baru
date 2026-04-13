@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use PDF; // Import library DomPDF
 
 class TransaksiController extends Controller
 {
@@ -22,7 +23,6 @@ class TransaksiController extends Controller
             ->select('transaksi.*', 'buku.nama_buku', 'users.nama') 
             ->orderBy('transaksi.id_transaksi', 'desc');
 
-        // Filter Search
         if ($request->has('search')) {
             $search = $request->get('search');
             $query->where(function($q) use ($search) {
@@ -31,42 +31,42 @@ class TransaksiController extends Controller
             });
         }
 
-        // Filter Tanggal
         if ($request->filled('tanggal')) {
             $query->whereDate('transaksi.tanggal_peminjaman', $request->get('tanggal'));
         }
 
-        // Role Check
         if ($user->role == 'admin') {
             $transaksis = $query->get();
         } else {
             $transaksis = $query->where('transaksi.id', $user->id)->get();
         }
 
-        // Kalkulasi Denda (Tetap muncul meski sudah dikembalikan)
         foreach ($transaksis as $t) {
-            $tgl_deadline = Carbon::parse($t->tanggal_pengembalian);
-            
-            // Jika sudah dikembalikan, hitung denda berdasarkan tgl update (asumsi tgl kembali)
-            // Jika masih dipinjam, hitung denda berdasarkan tgl sekarang
-            $tgl_akhir = ($t->status == 'Dikembalikan') 
-                         ? Carbon::parse($t->updated_at) 
-                         : Carbon::now();
-
-            if ($tgl_akhir->gt($tgl_deadline)) {
-                $selisih_hari = $tgl_akhir->diffInDays($tgl_deadline);
-                $t->total_denda = $selisih_hari * $harga_denda_per_hari;
-                $t->terlambat = $selisih_hari;
-            } else {
-                $t->total_denda = 0;
-                $t->terlambat = 0;
-            }
+            $this->hitungDenda($t);
         }
 
         if ($user->role == 'admin') {
             return view('transaksi.admin', compact('transaksis', 'bukus', 'list_anggota'));
         } else {
             return view('transaksi.siswa', compact('transaksis', 'bukus'));
+        }
+    }
+
+    // Fungsi tambahan untuk menghitung denda agar tidak duplikasi code
+    private function hitungDenda($t)
+    {
+        $tgl_deadline = Carbon::parse($t->tanggal_pengembalian);
+        $tgl_akhir = ($t->status == 'Dikembalikan') 
+                     ? Carbon::parse($t->updated_at) 
+                     : Carbon::now();
+
+        if ($tgl_akhir->gt($tgl_deadline)) {
+            $selisih_hari = $tgl_akhir->diffInDays($tgl_deadline);
+            $t->total_denda = $selisih_hari * 1000;
+            $t->terlambat = $selisih_hari;
+        } else {
+            $t->total_denda = 0;
+            $t->terlambat = 0;
         }
     }
 
@@ -83,36 +83,60 @@ class TransaksiController extends Controller
             return back()->with('error', 'Data tidak ditemukan.');
         }
 
-        $tgl_deadline = Carbon::parse($transaksi->tanggal_pengembalian);
-        $tgl_akhir = ($transaksi->status == 'Dikembalikan') 
-                     ? Carbon::parse($transaksi->updated_at) 
-                     : Carbon::now();
-                     
-        $harga_denda_per_hari = 1000;
-
-        if ($tgl_akhir->gt($tgl_deadline)) {
-            $selisih_hari = $tgl_akhir->diffInDays($tgl_deadline);
-            $transaksi->total_denda = $selisih_hari * $harga_denda_per_hari;
-            $transaksi->hari_terlambat = $selisih_hari;
-        } else {
-            $transaksi->total_denda = 0;
-            $transaksi->hari_terlambat = 0;
-        }
+        $this->hitungDenda($transaksi);
 
         return view('transaksi.detail', compact('transaksi'));
     }
+
+    // --- FITUR CETAK PDF ---
+
+    // 1. Cetak Satuan (Detail Transaksi)
+    public function cetak_pdf($id)
+    {
+        $transaksi = DB::table('transaksi')
+            ->join('buku', 'transaksi.id_buku', '=', 'buku.id_buku')
+            ->join('users', 'transaksi.id', '=', 'users.id')
+            ->select('transaksi.*', 'buku.nama_buku', 'buku.penerbit', 'users.nama')
+            ->where('transaksi.id_transaksi', $id)
+            ->first();
+
+        if (!$transaksi) return back()->with('error', 'Data tidak ditemukan.');
+
+        $this->hitungDenda($transaksi);
+
+        $pdf = PDF::loadView('transaksi.pdf_detail', compact('transaksi'));
+        return $pdf->stream('Struk_Transaksi_'.$id.'.pdf');
+    }
+
+    // 2. Cetak Semua (Laporan Admin)
+    public function cetak_semua()
+    {
+        $transaksis = DB::table('transaksi')
+            ->join('buku', 'transaksi.id_buku', '=', 'buku.id_buku')
+            ->join('users', 'transaksi.id', '=', 'users.id')
+            ->select('transaksi.*', 'buku.nama_buku', 'users.nama')
+            ->orderBy('transaksi.id_transaksi', 'desc')
+            ->get();
+
+        foreach ($transaksis as $t) {
+            $this->hitungDenda($t);
+        }
+
+        $pdf = PDF::loadView('transaksi.pdf_all', compact('transaksis'));
+        return $pdf->download('Laporan_Transaksi_Perpustakaan.pdf');
+    }
+
+    // --- LANJUTAN FUNGSI CRUD BAWAAN ---
 
     public function store(Request $request)
     {
         $userId = auth()->user()->role == 'admin' ? $request->user_id : auth()->id();
 
-        // Validasi Maksimal Pinjam
         $cekPinjam = DB::table('transaksi')->where('id', $userId)->where('status', 'Dipinjam')->count();
         if ($cekPinjam >= 3) {
             return back()->with('error', 'Gagal! Siswa ini masih meminjam 3 buku.');
         }
 
-        // Validasi Stok
         $buku = DB::table('buku')->where('id_buku', $request->id_buku)->first();
         if (!$buku || $buku->stok <= 0) {
             return back()->with('error', 'Maaf, stok buku ini sudah habis!');
@@ -160,7 +184,7 @@ class TransaksiController extends Controller
             DB::transaction(function () use ($tr, $id) {
                 DB::table('transaksi')->where('id_transaksi', $id)->update([
                     'status' => 'Dikembalikan',
-                    'updated_at' => now() // Menjadi acuan tgl pengembalian
+                    'updated_at' => now() 
                 ]);
                 DB::table('buku')->where('id_buku', $tr->id_buku)->increment('stok');
             });

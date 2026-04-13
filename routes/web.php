@@ -39,12 +39,16 @@ Route::middleware('auth')->group(function () {
     // --- FITUR TRANSAKSI (Prefix Group) ---
     Route::prefix('transaksi')->group(function () {
         Route::get('/', [TransaksiController::class, 'index']);             // Lihat Semua Data
-        Route::get('/show/{id}', [TransaksiController::class, 'show']);      // DETAIL TRANSAKSI (Baru)
+        Route::get('/show/{id}', [TransaksiController::class, 'show']);      // DETAIL TRANSAKSI
         Route::post('/store', [TransaksiController::class, 'store']);       // Pinjam Buku
         Route::get('/edit/{id}', [TransaksiController::class, 'edit']);     // Form Edit
         Route::post('/update/{id}', [TransaksiController::class, 'update']); // Proses Update
         Route::get('/delete/{id}', [TransaksiController::class, 'destroy']); // Hapus Data
         Route::get('/kembali/{id}', [TransaksiController::class, 'kembali']); // Pengembalian
+        
+        // --- ROUTE CETAK PDF (BARU) ---
+        Route::get('/cetak/{id}', [TransaksiController::class, 'cetak_pdf'])->name('transaksi.cetak');
+        Route::get('/cetak-semua', [TransaksiController::class, 'cetak_semua'])->name('transaksi.cetak_semua');
     });
 
     // --- DASHBOARD KHUSUS SISWA ---

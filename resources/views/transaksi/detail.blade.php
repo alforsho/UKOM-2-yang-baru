@@ -5,7 +5,13 @@
     <div class="card shadow-sm border-0 rounded-4 mx-auto" style="max-width: 800px;">
         <div class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center">
             <h5 class="fw-bold mb-0 text-primary">Detail Transaksi #{{ $transaksi->id_transaksi }}</h5>
-            <a href="{{ url('transaksi') }}" class="btn btn-outline-secondary btn-sm rounded-pill px-3">Kembali</a>
+            <div class="d-flex gap-2">
+                {{-- TOMBOL CETAK STRUK --}}
+                <a href="{{ route('transaksi.cetak', $transaksi->id_transaksi) }}" target="_blank" class="btn btn-success btn-sm rounded-pill px-3 shadow-sm">
+                    <i class="fas fa-print me-1"></i> Cetak Struk
+                </a>
+                <a href="{{ url('transaksi') }}" class="btn btn-outline-secondary btn-sm rounded-pill px-3">Kembali</a>
+            </div>
         </div>
         <div class="card-body p-4">
             <div class="row g-4">
@@ -47,7 +53,6 @@
                 {{-- Box Denda --}}
                 @if($transaksi->total_denda > 0)
                 <div class="col-12 mt-4">
-                    {{-- Warna alert berubah jadi hijau jika sudah dikembalikan/lunas --}}
                     <div class="alert {{ $transaksi->status == 'Dikembalikan' ? 'alert-success' : 'alert-danger' }} border-0 rounded-4 d-flex align-items-center shadow-sm">
                         <i class="fas {{ $transaksi->status == 'Dikembalikan' ? 'fa-check-circle' : 'fa-clock' }} fa-2x me-3"></i>
                         <div>
