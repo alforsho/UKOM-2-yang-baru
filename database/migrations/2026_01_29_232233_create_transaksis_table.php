@@ -11,17 +11,31 @@ class CreateTransaksisTable extends Migration
      *
      * @return void
      */
-public function up()
-{
-    Schema::create('transaksi', function (Blueprint $table) {
-        $table->id('id_transaksi'); // Atribut id_transaksi
-        $table->foreignId('id')->constrained('users')->onDelete('cascade'); // Relasi ke User
-        $table->foreignId('id_buku')->constrained('buku', 'id_buku')->onDelete('cascade'); // Relasi ke Buku
-        $table->date('tanggal_trs'); // Atribut tanggal_trs
-        $table->string('status'); // Atribut status (misal: Pinjam/Kembali)
-        $table->timestamps();
-    });
-}
+    public function up()
+    {
+        Schema::create('transaksi', function (Blueprint $table) {
+            // 1. Primary Key: id_transaksi (bigint unsigned, auto_increment)
+            $table->id('id_transaksi'); 
+
+            // 2. Foreign Key: id (bigint unsigned) menghubungkan ke tabel users
+            $table->foreignId('id')->constrained('users')->onDelete('cascade');
+
+            // 3. Foreign Key: id_buku (bigint unsigned) menghubungkan ke tabel buku
+            $table->foreignId('id_buku')->constrained('buku', 'id_buku')->onDelete('cascade');
+
+            // 4. tanggal_peminjaman (datetime) sesuai di foto
+            $table->dateTime('tanggal_peminjaman');
+
+            // 5. tanggal_pengembalian (datetime) sesuai di foto
+            $table->dateTime('tanggal_pengembalian');
+
+            // 6. status (varchar 255)
+            $table->string('status', 255);
+
+            // 7 & 8. created_at & updated_at (timestamp, nullable)
+            $table->timestamps();
+        });
+    }
 
     /**
      * Reverse the migrations.
@@ -30,6 +44,6 @@ public function up()
      */
     public function down()
     {
-        Schema::dropIfExists('transaksis');
+        Schema::dropIfExists('transaksi');
     }
 }
