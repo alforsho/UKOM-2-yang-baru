@@ -1,163 +1,160 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container py-4">
+<div class="container-fluid py-4 px-4">
     {{-- 1. Header Section --}}
-    <div class="row mb-4">
-        <div class="col">
-            <h2 class="fw-bold text-primary">Dashboard Admin</h2>
-            <p class="text-muted">Selamat Datang kembali, <strong>{{ auth()->user()->nama }}</strong>. Berikut ringkasan data perpustakaan hari ini.</p>
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-2">
+        <div>
+            <h3 class="fw-bold text-primary mb-0">Dashboard Admin</h3>
+            <p class="text-muted mb-0">Halo, <strong>{{ auth()->user()->nama }}</strong>. Berikut ringkasan perpustakaan hari ini.</p>
+        </div>
+        <div>
+            <span class="badge bg-white text-primary border px-3 py-2 rounded-pill shadow-sm">
+                <i class="fas fa-calendar-alt me-2"></i>{{ date('d M Y') }}
+            </span>
         </div>
     </div>
 
-    {{-- 2. Bar Chart Section (Sekarang di Atas) --}}
-    <div class="row mb-5">
-        <div class="col-md-12">
-            <div class="card border-0 shadow-sm p-4" style="border-radius: 15px;">
+    <div class="row g-4">
+        {{-- 2. Bar Chart Section (Kiri) --}}
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm p-4 h-100" style="border-radius: 20px;">
                 <div class="d-flex justify-content-between align-items-center mb-4">
-                    <div>
-                        <h5 class="fw-bold text-dark mb-0">Statistik Data Perpustakaan</h5>
-                        <small class="text-muted">Perbandingan jumlah Buku, Anggota, dan Transaksi</small>
+                    <h5 class="fw-bold text-dark mb-0">Statistik Perpustakaan</h5>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-light rounded-circle" type="button"><i class="fas fa-ellipsis-v"></i></button>
                     </div>
-                    <span class="badge bg-light text-dark border">Data Real-time</span>
                 </div>
-                <div style="position: relative; height:300px;">
+                <div class="chart-container" style="position: relative; height: 350px; width: 100%;">
                     <canvas id="libraryBarChart"></canvas>
                 </div>
             </div>
         </div>
-    </div>
 
-    {{-- 3. Stats Cards Section (Sekarang di Bawah Grafik) --}}
-    <div class="row g-4">
-        {{-- Card Buku --}}
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm card-hover h-100 p-3">
-                <div class="d-flex align-items-center justify-content-between">
-                    <div>
-                        <h6 class="text-muted mb-1 fw-bold small text-uppercase">Koleksi Buku</h6>
-                        <h2 class="fw-bold mb-0 text-dark">{{ \App\Models\Buku::count() }}</h2>
+        {{-- 3. Stats Cards Section (Kanan) --}}
+        <div class="col-lg-4">
+            <div class="d-flex flex-column gap-4">
+                {{-- Card Buku --}}
+                <div class="card border-0 shadow-sm card-hover p-3 position-relative">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h6 class="text-muted mb-1 fw-bold small">KOLEKSI BUKU</h6>
+                            <h2 class="fw-bold mb-0 text-dark">{{ \App\Models\Buku::count() }}</h2>
+                        </div>
+                        <div class="icon-circle bg-primary text-white shadow-sm">
+                            <i class="fas fa-book fa-lg"></i>
+                        </div>
                     </div>
-                    <div class="icon-circle bg-primary text-white shadow-sm">
-                        <i class="fas fa-book fa-2x"></i>
-                    </div>
+                    <a href="/admin/buku" class="text-primary small text-decoration-none fw-bold mt-3 stretched-link">
+                        Manage <i class="fas fa-chevron-right ms-1"></i>
+                    </a>
                 </div>
-                <hr class="my-3 opacity-25">
-                <a href="/admin/buku" class="text-primary small text-decoration-none fw-bold">
-                    Kelola Data Buku <i class="fas fa-arrow-right ms-1"></i>
-                </a>
-            </div>
-        </div>
 
-        {{-- Card Anggota --}}
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm card-hover h-100 p-3">
-                <div class="d-flex align-items-center justify-content-between">
-                    <div>
-                        <h6 class="text-muted mb-1 fw-bold small text-uppercase">Total Anggota</h6>
-                        <h2 class="fw-bold mb-0 text-dark">{{ \App\Models\Anggota::count() }}</h2>
+                {{-- Card Anggota --}}
+                <div class="card border-0 shadow-sm card-hover p-3 position-relative">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h6 class="text-muted mb-1 fw-bold small">TOTAL ANGGOTA</h6>
+                            <h2 class="fw-bold mb-0 text-dark">{{ \App\Models\Anggota::count() }}</h2>
+                        </div>
+                        <div class="icon-circle bg-success text-white shadow-sm">
+                            <i class="fas fa-users fa-lg"></i>
+                        </div>
                     </div>
-                    <div class="icon-circle bg-success text-white shadow-sm">
-                        <i class="fas fa-users fa-2x"></i>
-                    </div>
+                    <a href="/admin/anggota" class="text-success small text-decoration-none fw-bold mt-3 stretched-link">
+                        Detail <i class="fas fa-chevron-right ms-1"></i>
+                    </a>
                 </div>
-                <hr class="my-3 opacity-25">
-                <a href="/admin/anggota" class="text-success small text-decoration-none fw-bold">
-                    Lihat Semua Siswa <i class="fas fa-arrow-right ms-1"></i>
-                </a>
-            </div>
-        </div>
 
-        {{-- Card Transaksi --}}
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm card-hover h-100 p-3">
-                <div class="d-flex align-items-center justify-content-between">
-                    <div>
-                        <h6 class="text-muted mb-1 fw-bold small text-uppercase">Transaksi Pinjam</h6>
-                        <h2 class="fw-bold mb-0 text-dark">{{ \App\Models\Transaksi::count() }}</h2>
+                {{-- Card Transaksi --}}
+                <div class="card border-0 shadow-sm card-hover p-3 position-relative">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h6 class="text-muted mb-1 fw-bold small">TOTAL TRANSAKSI</h6>
+                            <h2 class="fw-bold mb-0 text-dark">{{ \App\Models\Transaksi::count() }}</h2>
+                        </div>
+                        <div class="icon-circle bg-warning text-white shadow-sm">
+                            <i class="fas fa-exchange-alt fa-lg"></i>
+                        </div>
                     </div>
-                    <div class="icon-circle bg-warning text-white shadow-sm">
-                        <i class="fas fa-exchange-alt fa-2x"></i>
-                    </div>
+                    <a href="/transaksi" class="text-warning small text-decoration-none fw-bold mt-3 stretched-link">
+                        Laporan <i class="fas fa-chevron-right ms-1"></i>
+                    </a>
                 </div>
-                <hr class="my-3 opacity-25">
-                <a href="/transaksi" class="text-warning small text-decoration-none fw-bold">
-                    Cek Laporan Transaksi <i class="fas fa-arrow-right ms-1"></i>
-                </a>
             </div>
         </div>
     </div>
 </div>
 
-{{-- CSS Custom --}}
 <style>
-    .card-hover {
-        transition: all 0.3s ease;
-        border-radius: 15px;
+    body { 
+        background-color: #f8f9fa; 
+        min-height: 100vh;
     }
-    .card-hover:hover {
-        transform: translateY(-8px);
-        box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+    .card-hover { 
+        transition: all 0.3s cubic-bezier(.25,.8,.25,1); 
+        border-radius: 20px; 
     }
-    .icon-circle {
-        width: 60px;
-        height: 60px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 12px;
+    .card-hover:hover { 
+        transform: translateY(-5px); 
+        box-shadow: 0 12px 20px rgba(0,0,0,0.08) !important; 
+    }
+    .icon-circle { 
+        width: 55px; 
+        height: 55px; 
+        display: flex; 
+        align-items: center; 
+        justify-content: center; 
+        border-radius: 15px; 
+    }
+    .chart-container {
+        min-height: 300px;
     }
 </style>
 
-{{-- JS Scripts --}}
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const ctx = document.getElementById('libraryBarChart').getContext('2d');
         
+        // Gradient effect
+        const gradientBlue = ctx.createLinearGradient(0, 0, 0, 400);
+        gradientBlue.addColorStop(0, 'rgba(13, 110, 253, 1)');
+        gradientBlue.addColorStop(1, 'rgba(13, 110, 253, 0.3)');
+
         new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: ['Buku', 'Anggota', 'Transaksi'],
                 datasets: [{
-                    label: 'Jumlah Total',
+                    label: 'Jumlah',
                     data: [
                         {{ \App\Models\Buku::count() }}, 
                         {{ \App\Models\Anggota::count() }}, 
                         {{ \App\Models\Transaksi::count() }}
                     ],
                     backgroundColor: [
-                        'rgba(13, 110, 253, 0.85)', // Blue
-                        'rgba(25, 135, 84, 0.85)',  // Green
-                        'rgba(255, 193, 7, 0.85)'   // Yellow
+                        gradientBlue, 
+                        'rgba(25, 135, 84, 0.8)', 
+                        'rgba(255, 193, 7, 0.8)'
                     ],
-                    borderColor: [
-                        '#0d6efd',
-                        '#198754',
-                        '#ffc107'
-                    ],
-                    borderWidth: 1,
                     borderRadius: 10,
-                    borderSkipped: false,
                     barPercentage: 0.5
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false }
+                plugins: { 
+                    legend: { display: false } 
                 },
                 scales: {
-                    y: {
+                    y: { 
                         beginAtZero: true,
-                        grid: { color: '#f0f0f0', drawBorder: false },
-                        ticks: { precision: 0 }
+                        grid: { color: '#f0f0f0', drawBorder: false }
                     },
-                    x: {
-                        grid: { display: false }
+                    x: { 
+                        grid: { display: false } 
                     }
                 }
             }
