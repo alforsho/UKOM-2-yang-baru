@@ -12,11 +12,16 @@
             <form action="/transaksi/update/{{ $transaksi->id_transaksi }}" method="POST">
                 @csrf
                 
+                {{-- INPUT HIDDEN: Supaya tanggal tidak hilang dan tidak NULL --}}
+                <input type="hidden" name="tanggal_peminjaman" value="{{ $transaksi->tanggal_peminjaman }}">
+                <input type="hidden" name="tanggal_pengembalian" value="{{ $transaksi->tanggal_pengembalian }}">
+
                 {{-- Nama Siswa --}}
                 <div class="mb-3">
                     <label class="form-label small fw-bold text-muted text-uppercase">Nama Siswa</label>
                     @if(auth()->user()->role == 'admin')
-                        <select name="user_id" class="form-select bg-light border-0 py-2">
+                        {{-- FIX: Ganti name menjadi "id" agar sesuai dengan Controller --}}
+                        <select name="id" class="form-select bg-light border-0 py-2">
                             @foreach(DB::table('users')->where('role', 'siswa')->get() as $u)
                                 <option value="{{ $u->id }}" {{ $u->id == $transaksi->id ? 'selected' : '' }}>
                                     {{ $u->nama }}
@@ -24,6 +29,7 @@
                             @endforeach
                         </select>
                     @else
+                        <input type="hidden" name="id" value="{{ auth()->id() }}">
                         <input type="text" class="form-control bg-light border-0 py-2" value="{{ auth()->user()->nama }}" readonly>
                     @endif
                 </div>
@@ -45,11 +51,11 @@
                     <label class="form-label small fw-bold text-muted text-uppercase">Status Transaksi</label>
                     @if(auth()->user()->role == 'admin')
                         <select name="status" class="form-select bg-light border-0 py-2">
-                            {{-- Menyesuaikan dengan status yang kita pakai di controller --}}
                             <option value="Dipinjam" {{ $transaksi->status == 'Dipinjam' ? 'selected' : '' }}>Dipinjam</option>
                             <option value="Dikembalikan" {{ $transaksi->status == 'Dikembalikan' ? 'selected' : '' }}>Dikembalikan</option>
                         </select>
                     @else
+                        <input type="hidden" name="status" value="{{ $transaksi->status }}">
                         <div class="form-control bg-light border-0 py-2 text-muted italic">
                             {{ $transaksi->status }}
                         </div>
