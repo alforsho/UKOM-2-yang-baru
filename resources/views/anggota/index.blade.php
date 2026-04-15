@@ -77,10 +77,13 @@
                             </td>
                             <td class="text-center pe-4">
                                 <div class="btn-group gap-1">
-                                    <button class="btn btn-sm btn-outline-warning border-0 p-2" onclick="editUser({{ json_encode($u) }})" data-bs-toggle="modal" data-bs-target="#modalEdit">
+                                    <a href="/admin/anggota/show/{{ $u->id }}" class="btn btn-sm btn-outline-info border-0 p-2" title="Detail & Cetak">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <button class="btn btn-sm btn-outline-warning border-0 p-2" onclick="editUser({{ json_encode($u) }})" data-bs-toggle="modal" data-bs-target="#modalEdit" title="Edit">
                                         <i class="fas fa-edit"></i>
                                     </button>
-                                    <a href="/admin/anggota/delete/{{ $u->id }}" class="btn btn-sm btn-outline-danger border-0 p-2" onclick="return confirm('Hapus user?')">
+                                    <a href="/admin/anggota/delete/{{ $u->id }}" class="btn btn-sm btn-outline-danger border-0 p-2" onclick="return confirm('Hapus user?')" title="Hapus">
                                         <i class="fas fa-trash"></i>
                                     </a>
                                 </div>

@@ -7,9 +7,12 @@ use App\Models\User;
 use App\Models\Anggota;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class AuthController extends Controller
 {
+    // --- AUTHENTICATION ---
+
     // Halaman Login
     public function showLogin() { 
         return view('auth.login'); 
@@ -74,4 +77,57 @@ class AuthController extends Controller
         Auth::logout();
         return redirect('/login');
     }
-} // Tanda kurung ini sering hilang/ketinggalan
+
+    // --- FITUR PROFIL ---
+
+    // Tampilkan Halaman Profil
+    public function showProfil()
+    {
+        $id = Auth::id();
+        
+        // Mengambil data User gabungan dengan tabel Anggota (jika ada)
+        $user = User::select('users.*', 'anggota.nis', 'anggota.kelas', 'anggota.jurusan', 'anggota.no_telp')
+            ->leftJoin('anggota', 'users.id', '=', 'anggota.user_id')
+            ->where('users.id', $id)
+            ->first();
+
+        return view('auth.profil', compact('user'));
+    }
+
+    // Proses Update Profil (Nama & Password)
+    public function updateProfil(Request $request)
+    {
+        $user = Auth::user();
+        
+        $request->validate([
+            'nama' => 'required|string|max:255',
+            'password' => 'nullable|min:5|confirmed', // butuh input password_confirmation di view
+        ]);
+
+        DB::transaction(function () use ($request, $user) {
+            
+            // 1. Update Tabel Users
+            $updateData = [
+                'nama' => $request->nama,
+            ];
+
+            if ($request->filled('password')) {
+                $updateData['password'] = Hash::make($request->password);
+            }
+
+            User::where('id', $user->id)->update($updateData);
+
+            // 2. Update Tabel Anggota (Jika user adalah siswa)
+            if ($user->role == 'siswa') {
+                Anggota::where('user_id', $user->id)->update([
+                    'nama_anggota' => $request->nama,
+                    'kelas' => $request->kelas,
+                    'jurusan' => $request->jurusan,
+                    'no_telp' => $request->no_telp,
+                ]);
+            }
+        });
+
+        return back()->with('success', 'Profil berhasil diperbarui!');
+    }
+}

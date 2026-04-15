@@ -5,17 +5,18 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
-use PDF; // Import library DomPDF
+use PDF; 
 
 class TransaksiController extends Controller
 {
+    /**
+     * 1. MONITORING UNTUK ADMIN (INDEX)
+     * FITUR FILTER: Pencarian (Nama/Buku) dan Waktu (Tgl/Bln/Thn)
+     */
     public function index(Request $request)
     {
-        $user = auth()->user();
         $bukus = DB::table('buku')->where('stok', '>', 0)->get();
         $list_anggota = DB::table('users')->where('role', 'siswa')->get();
-
-        $harga_denda_per_hari = 1000; 
 
         $query = DB::table('transaksi')
             ->join('buku', 'transaksi.id_buku', '=', 'buku.id_buku')
@@ -23,7 +24,8 @@ class TransaksiController extends Controller
             ->select('transaksi.*', 'buku.nama_buku', 'users.nama') 
             ->orderBy('transaksi.id_transaksi', 'desc');
 
-        if ($request->has('search')) {
+        // Filter Pencarian Nama atau Judul Buku
+        if ($request->filled('search')) {
             $search = $request->get('search');
             $query->where(function($q) use ($search) {
                 $q->where('users.nama', 'like', "%$search%")
@@ -31,34 +33,111 @@ class TransaksiController extends Controller
             });
         }
 
-        if ($request->filled('tanggal')) {
-            $query->whereDate('transaksi.tanggal_peminjaman', $request->get('tanggal'));
-        }
+        // Filter Waktu Berdasarkan Tanggal Peminjaman
+        if ($request->filled('tgl')) $query->whereDay('transaksi.tanggal_peminjaman', $request->tgl);
+        if ($request->filled('bln')) $query->whereMonth('transaksi.tanggal_peminjaman', $request->bln);
+        if ($request->filled('thn')) $query->whereYear('transaksi.tanggal_peminjaman', $request->thn);
 
-        if ($user->role == 'admin') {
-            $transaksis = $query->get();
-        } else {
-            $transaksis = $query->where('transaksi.id', $user->id)->get();
-        }
+        $transaksis = $query->get();
+        foreach ($transaksis as $t) { $this->hitungDenda($t); }
 
-        foreach ($transaksis as $t) {
-            $this->hitungDenda($t);
-        }
-
-        if ($user->role == 'admin') {
-            return view('transaksi.admin', compact('transaksis', 'bukus', 'list_anggota'));
-        } else {
-            return view('transaksi.siswa', compact('transaksis', 'bukus'));
-        }
+        return view('transaksi.admin', compact('transaksis', 'bukus', 'list_anggota'));
     }
 
-    // Fungsi tambahan untuk menghitung denda agar tidak duplikasi code
+    /**
+     * 2. DETAIL TRANSAKSI (SHOW)
+     */
+    public function show($id)
+    {
+        $transaksi = DB::table('transaksi')
+            ->join('buku', 'transaksi.id_buku', '=', 'buku.id_buku')
+            ->join('users', 'transaksi.id', '=', 'users.id')
+            ->leftJoin('anggota', 'users.id', '=', 'anggota.user_id')
+            ->select(
+                'transaksi.*', 
+                'buku.nama_buku', 
+                'buku.penerbit', 
+                'users.nama', 
+                'anggota.nama_anggota', 
+                'anggota.nis', 
+                'anggota.kelas', 
+                'anggota.jurusan'
+            )
+            ->where('transaksi.id_transaksi', $id)
+            ->first();
+
+        if (!$transaksi) return back()->with('error', 'Data tidak ditemukan.');
+        $this->hitungDenda($transaksi);
+        return view('transaksi.show', compact('transaksi'));
+    }
+
+    /**
+     * 3. EDIT TRANSAKSI
+     */
+    public function edit($id)
+    {
+        $transaksi = DB::table('transaksi')->where('id_transaksi', $id)->first();
+        $bukus = DB::table('buku')->get();
+        $users = DB::table('users')->where('role', 'siswa')->get();
+
+        if (!$transaksi) return back()->with('error', 'Data tidak ditemukan.');
+        return view('transaksi.edit', compact('transaksi', 'bukus', 'users'));
+    }
+
+    /**
+     * 4. UPDATE TRANSAKSI
+     */
+    public function update(Request $request, $id)
+    {
+        DB::table('transaksi')->where('id_transaksi', $id)->update([
+            'id_buku' => $request->id_buku,
+            'id' => $request->id,
+            'tanggal_peminjaman' => $request->tanggal_peminjaman,
+            'tanggal_pengembalian' => $request->tanggal_pengembalian,
+            'status' => $request->status,
+            'updated_at' => now(),
+        ]);
+
+        return redirect()->route('transaksi.index')->with('success', 'Data berhasil diupdate!');
+    }
+
+    /**
+     * 5. KATALOG BUKU (SISWA)
+     */
+    public function pinjamBuku(Request $request)
+    {
+        $query = DB::table('buku')->where('stok', '>', 0);
+        if ($request->filled('search')) {
+            $query->where('nama_buku', 'like', '%' . $request->search . '%');
+        }
+        $bukus = $query->get();
+        return view('transaksi.pinjam', compact('bukus'));
+    }
+
+    /**
+     * 6. RIWAYAT PINJAMAN (SISWA)
+     */
+    public function riwayatBuku()
+    {
+        $user = auth()->user();
+        $transaksis = DB::table('transaksi')
+            ->join('buku', 'transaksi.id_buku', '=', 'buku.id_buku')
+            ->select('transaksi.*', 'buku.nama_buku')
+            ->where('transaksi.id', $user->id)
+            ->orderBy('transaksi.id_transaksi', 'desc')
+            ->get();
+
+        foreach ($transaksis as $t) { $this->hitungDenda($t); }
+        return view('transaksi.riwayat', compact('transaksis'));
+    }
+
+    /**
+     * 7. LOGIKA HITUNG DENDA
+     */
     private function hitungDenda($t)
     {
         $tgl_deadline = Carbon::parse($t->tanggal_pengembalian);
-        $tgl_akhir = ($t->status == 'Dikembalikan') 
-                     ? Carbon::parse($t->updated_at) 
-                     : Carbon::now();
+        $tgl_akhir = ($t->status == 'Dikembalikan') ? Carbon::parse($t->updated_at) : Carbon::now();
 
         if ($tgl_akhir->gt($tgl_deadline)) {
             $selisih_hari = $tgl_akhir->diffInDays($tgl_deadline);
@@ -70,77 +149,18 @@ class TransaksiController extends Controller
         }
     }
 
-    public function show($id)
-    {
-        $transaksi = DB::table('transaksi')
-            ->join('buku', 'transaksi.id_buku', '=', 'buku.id_buku')
-            ->join('users', 'transaksi.id', '=', 'users.id')
-            ->select('transaksi.*', 'buku.nama_buku', 'buku.penerbit', 'users.nama')
-            ->where('transaksi.id_transaksi', $id)
-            ->first();
-
-        if (!$transaksi) {
-            return back()->with('error', 'Data tidak ditemukan.');
-        }
-
-        $this->hitungDenda($transaksi);
-
-        return view('transaksi.detail', compact('transaksi'));
-    }
-
-    // --- FITUR CETAK PDF ---
-
-    // 1. Cetak Satuan (Detail Transaksi)
-    public function cetak_pdf($id)
-    {
-        $transaksi = DB::table('transaksi')
-            ->join('buku', 'transaksi.id_buku', '=', 'buku.id_buku')
-            ->join('users', 'transaksi.id', '=', 'users.id')
-            ->select('transaksi.*', 'buku.nama_buku', 'buku.penerbit', 'users.nama')
-            ->where('transaksi.id_transaksi', $id)
-            ->first();
-
-        if (!$transaksi) return back()->with('error', 'Data tidak ditemukan.');
-
-        $this->hitungDenda($transaksi);
-
-        $pdf = PDF::loadView('transaksi.pdf_detail', compact('transaksi'));
-        return $pdf->stream('Struk_Transaksi_'.$id.'.pdf');
-    }
-
-    // 2. Cetak Semua (Laporan Admin)
-    public function cetak_semua()
-    {
-        $transaksis = DB::table('transaksi')
-            ->join('buku', 'transaksi.id_buku', '=', 'buku.id_buku')
-            ->join('users', 'transaksi.id', '=', 'users.id')
-            ->select('transaksi.*', 'buku.nama_buku', 'users.nama')
-            ->orderBy('transaksi.id_transaksi', 'desc')
-            ->get();
-
-        foreach ($transaksis as $t) {
-            $this->hitungDenda($t);
-        }
-
-        $pdf = PDF::loadView('transaksi.pdf_all', compact('transaksis'));
-        return $pdf->download('Laporan_Transaksi_Perpustakaan.pdf');
-    }
-
-    // --- LANJUTAN FUNGSI CRUD BAWAAN ---
-
+    /**
+     * 8. SIMPAN TRANSAKSI (STORE)
+     */
     public function store(Request $request)
     {
-        $userId = auth()->user()->role == 'admin' ? $request->user_id : auth()->id();
-
+        $userId = auth()->user()->role == 'admin' ? $request->id : auth()->id();
         $cekPinjam = DB::table('transaksi')->where('id', $userId)->where('status', 'Dipinjam')->count();
-        if ($cekPinjam >= 3) {
-            return back()->with('error', 'Gagal! Siswa ini masih meminjam 3 buku.');
-        }
+
+        if ($cekPinjam >= 3) return back()->with('error', 'Batas maksimal 3 buku!');
 
         $buku = DB::table('buku')->where('id_buku', $request->id_buku)->first();
-        if (!$buku || $buku->stok <= 0) {
-            return back()->with('error', 'Maaf, stok buku ini sudah habis!');
-        }
+        if (!$buku || $buku->stok <= 0) return back()->with('error', 'Stok buku habis!');
 
         DB::transaction(function () use ($request, $userId) {
             DB::table('transaksi')->insert([
@@ -155,28 +175,14 @@ class TransaksiController extends Controller
             DB::table('buku')->where('id_buku', $request->id_buku)->decrement('stok');
         });
 
-        return back()->with('success', 'Peminjaman berhasil dicatat!');
+        return (auth()->user()->role == 'admin') 
+                ? redirect('transaksi')->with('success', 'Berhasil memproses pinjaman.') 
+                : redirect()->route('transaksi.riwayat')->with('success', 'Buku berhasil dipinjam!');
     }
 
-    public function edit($id)
-    {
-        $transaksi = DB::table('transaksi')->where('id_transaksi', $id)->first();
-        $bukus = DB::table('buku')->get();
-        $list_anggota = DB::table('users')->where('role', 'siswa')->get();
-        return view('transaksi.edit', compact('transaksi', 'bukus', 'list_anggota'));
-    }
-
-    public function update(Request $request, $id)
-    {
-        DB::table('transaksi')->where('id_transaksi', $id)->update([
-            'id' => $request->user_id,
-            'id_buku' => $request->id_buku,
-            'status' => $request->status,
-            'updated_at' => now(),
-        ]);
-        return redirect('/transaksi')->with('success', 'Transaksi diperbarui!');
-    }
-
+    /**
+     * 9. PENGEMBALIAN BUKU (KEMBALI)
+     */
     public function kembali($id)
     {
         $tr = DB::table('transaksi')->where('id_transaksi', $id)->first();
@@ -188,18 +194,69 @@ class TransaksiController extends Controller
                 ]);
                 DB::table('buku')->where('id_buku', $tr->id_buku)->increment('stok');
             });
-            return back()->with('success', 'Buku telah dikembalikan.');
+            return back()->with('success', 'Buku telah kembali.');
         }
-        return back()->with('error', 'Buku sudah dikembalikan.');
+        return back()->with('error', 'Data tidak valid.');
     }
 
+    /**
+     * 10. CETAK SEMUA LAPORAN (DENGAN FILTER)
+     */
+    public function cetak_semua(Request $request)
+    {
+        $query = DB::table('transaksi')
+            ->join('buku', 'transaksi.id_buku', '=', 'buku.id_buku')
+            ->join('users', 'transaksi.id', '=', 'users.id')
+            ->select('transaksi.*', 'buku.nama_buku', 'users.nama');
+
+        // Terapkan Filter yang sama dengan Index
+        if ($request->filled('search')) {
+            $search = $request->get('search');
+            $query->where(function($q) use ($search) {
+                $q->where('users.nama', 'like', "%$search%")
+                  ->orWhere('buku.nama_buku', 'like', "%$search%");
+            });
+        }
+        if ($request->filled('tgl')) $query->whereDay('transaksi.tanggal_peminjaman', $request->tgl);
+        if ($request->filled('bln')) $query->whereMonth('transaksi.tanggal_peminjaman', $request->bln);
+        if ($request->filled('thn')) $query->whereYear('transaksi.tanggal_peminjaman', $request->thn);
+
+        $data = $query->orderBy('transaksi.tanggal_peminjaman', 'asc')->get();
+        foreach ($data as $d) { $this->hitungDenda($d); }
+
+        $pdf = PDF::loadView('transaksi.pdf_laporan', compact('data'));
+        return $pdf->download('laporan_transaksi.pdf');
+    }
+
+    /**
+     * 11. CETAK STRUK SATUAN
+     */
+    public function cetak_pdf($id)
+    {
+        $transaksi = DB::table('transaksi')
+            ->join('buku', 'transaksi.id_buku', '=', 'buku.id_buku')
+            ->join('users', 'transaksi.id', '=', 'users.id')
+            ->select('transaksi.*', 'buku.nama_buku', 'users.nama')
+            ->where('transaksi.id_transaksi', $id)->first();
+
+        if (!$transaksi) return back()->with('error', 'Data tidak ditemukan.');
+        $this->hitungDenda($transaksi);
+
+        $pdf = PDF::loadView('transaksi.pdf_detail', compact('transaksi'));
+        $pdf->setPaper([0, 0, 450, 650], 'portrait'); 
+        return $pdf->stream('Struk_'.$id.'.pdf');
+    }
+
+    /**
+     * 12. HAPUS DATA (DESTROY)
+     */
     public function destroy($id)
     {
-        $transaksi = DB::table('transaksi')->where('id_transaksi', $id)->first();
-        if ($transaksi && $transaksi->status == 'Dipinjam') {
-            return back()->with('error', 'Buku masih dipinjam!');
+        $tr = DB::table('transaksi')->where('id_transaksi', $id)->first();
+        if ($tr && $tr->status == 'Dipinjam') {
+            return back()->with('error', 'Gagal! Buku masih dipinjam.');
         }
         DB::table('transaksi')->where('id_transaksi', $id)->delete();
-        return back()->with('success', 'Data dihapus.');
+        return back()->with('success', 'Data transaksi telah dihapus.');
     }
 }

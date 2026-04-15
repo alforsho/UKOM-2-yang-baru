@@ -3,143 +3,181 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Perpustakaan Digital</title>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <title>Libify | Digital Library</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
     <style>
-        body { 
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            background-color: #f5f7fa; 
-            color: #2d3748;
+        :root {
+            --primary-color: #4361ee;
+            --secondary-color: #3f37c9;
+            --bg-body: #f8faff;
+            --card-shadow: 0 10px 30px rgba(67, 97, 238, 0.05);
         }
 
-        /* Modern Navbar */
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-body); 
+            color: #1a202c;
+            overflow-x: hidden;
+        }
+
+        /* Modern Glassmorphism Navbar */
         .navbar {
-            background: #ffffff !important;
-            border-bottom: 1px solid #e2e8f0;
-            padding: 15px 0;
+            background: rgba(255, 255, 255, 0.8) !important;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(226, 232, 240, 0.5);
+            padding: 12px 0;
+            transition: all 0.3s ease;
         }
 
         .navbar-brand {
-            color: #0d6efd !important;
-            font-size: 1.4rem;
-            letter-spacing: -0.5px;
+            font-weight: 800;
+            font-size: 1.5rem;
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -1px;
         }
 
+        /* Nav Links Styling */
         .nav-link {
-            color: #4a5568 !important;
-            font-weight: 600;
-            padding: 8px 16px !important;
-            transition: all 0.3s ease;
-            border-radius: 8px;
+            color: #718096 !important;
+            font-weight: 500;
+            font-size: 0.95rem;
+            padding: 10px 20px !important;
+            margin: 0 4px;
+            transition: all 0.2s ease;
+            position: relative;
         }
 
         .nav-link:hover, .nav-link.active {
-            color: #0d6efd !important;
-            background: rgba(13, 110, 253, 0.08);
+            color: var(--primary-color) !important;
         }
 
-        /* User Profile Dropdown */
+        .nav-link.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 3px;
+            background: var(--primary-color);
+            border-radius: 10px;
+        }
+
+        /* User Profile & Hover Effect */
+        .user-profile-link {
+            text-decoration: none !important;
+        }
+
         .user-profile {
             display: flex;
             align-items: center;
-            padding: 5px 15px;
-            background: #f8fafc;
-            border-radius: 50px;
-            border: 1px solid #e2e8f0;
+            padding: 6px 16px 6px 6px;
+            background: #ffffff;
+            border-radius: 100px;
+            border: 1px solid #edf2f7;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
+            transition: all 0.3s ease;
+        }
+
+        .user-profile:hover {
+            border-color: var(--primary-color);
+            background: #f0f5ff;
+            transform: translateY(-1px);
         }
 
         .user-avatar {
-            width: 32px;
-            height: 32px;
-            background: #0d6efd;
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
             color: white;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: bold;
-            margin-right: 10px;
-        }
-
-        .role-badge {
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            padding: 2px 8px;
-            border-radius: 4px;
-            background: #e2e8f0;
-            color: #4a5568;
             font-weight: 700;
         }
 
-        /* Alert styling */
-        .alert {
-            border: none;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        .role-badge {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            padding: 2px 8px;
+            border-radius: 100px;
+            background: #f0f5ff;
+            color: var(--primary-color);
+            font-weight: 800;
+        }
+
+        .btn-logout {
+            background: #fff;
+            color: #e53e3e;
+            border: 1.5px solid #fed7d7;
+            padding: 8px 18px;
+            font-weight: 700;
+            border-radius: 100px;
+            transition: all 0.2s;
+        }
+
+        .btn-logout:hover {
+            background: #fff5f5;
+            border-color: #e53e3e;
+        }
+
+        main { animation: fadeIn 0.5s ease-out; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
     </style>
 </head>
 <body>
     <nav class="navbar navbar-expand-lg sticky-top">
         <div class="container">
-            <a class="navbar-brand fw-bold" href="#">
-                <i class="fas fa-book-reader me-2"></i>PERPUS-KU
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-book-sparkles me-2"></i>Libify
             </a>
             
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
+            <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <i class="fas fa-bars-staggered"></i>
             </button>
 
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-4">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-5">
                     @if(auth()->user()->role == 'admin')
-                        <li class="nav-item">
-                            <a class="nav-link {{ Request::is('admin/dashboard') ? 'active' : '' }}" href="/admin/dashboard">
-                                <i class="fas fa-chart-line me-1 small"></i> Dashboard
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {{ Request::is('admin/buku*') ? 'active' : '' }}" href="/admin/buku">
-                                <i class="fas fa-book me-1 small"></i> Data Buku
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {{ Request::is('admin/anggota*') ? 'active' : '' }}" href="/admin/anggota">
-                                <i class="fas fa-users me-1 small"></i> Anggota
-                            </a>
-                        </li>
+                        <li class="nav-item"><a class="nav-link {{ Request::is('admin/dashboard') ? 'active' : '' }}" href="/admin/dashboard">Dashboard</a></li>
+                        <li class="nav-item"><a class="nav-link {{ Request::is('admin/buku*') ? 'active' : '' }}" href="/admin/buku">Katalog</a></li>
+                        <li class="nav-item"><a class="nav-link {{ Request::is('admin/anggota*') ? 'active' : '' }}" href="/admin/anggota">Anggota</a></li>
+                        <li class="nav-item"><a class="nav-link {{ Request::is('transaksi') ? 'active' : '' }}" href="/transaksi">Semua Transaksi</a></li>
                     @else
-                        <li class="nav-item">
-                            <a class="nav-link {{ Request::is('siswa/dashboard') ? 'active' : '' }}" href="/siswa/dashboard">
-                                <i class="fas fa-home me-1 small"></i> Dashboard
-                            </a>
-                        </li>
+                        <li class="nav-item"><a class="nav-link {{ Request::is('siswa/dashboard') ? 'active' : '' }}" href="/siswa/dashboard">Home</a></li>
+                        <li class="nav-item"><a class="nav-link {{ Request::is('transaksi/pinjam') ? 'active' : '' }}" href="{{ route('transaksi.pinjam') }}">Peminjaman</a></li>
+                        <li class="nav-item"><a class="nav-link {{ Request::is('transaksi/riwayat') ? 'active' : '' }}" href="{{ route('transaksi.riwayat') }}">Riwayat</a></li>
                     @endif
-                    <li class="nav-item">
-                        <a class="nav-link {{ Request::is('transaksi*') ? 'active' : '' }}" href="/transaksi">
-                            <i class="fas fa-exchange-alt me-1 small"></i> Transaksi
-                        </a>
-                    </li>
                 </ul>
 
                 <div class="d-flex align-items-center gap-3">
-                    <div class="user-profile d-none d-md-flex">
-                        <div class="user-avatar">
-                            {{ strtoupper(substr(auth()->user()->nama, 0, 1)) }}
+                    <a href="{{ route('profil') }}" class="user-profile-link">
+                        <div class="user-profile">
+                            <div class="user-avatar me-2">{{ strtoupper(substr(auth()->user()->nama, 0, 1)) }}</div>
+                            <div class="me-2 d-none d-sm-block">
+                                <div class="fw-bold small text-dark" style="font-size: 0.85rem;">{{ auth()->user()->nama }}</div>
+                                <span class="role-badge">{{ auth()->user()->role }}</span>
+                            </div>
                         </div>
-                        <div class="me-3">
-                            <div class="fw-bold small text-dark" style="line-height: 1.2;">{{ auth()->user()->nama }}</div>
-                            <span class="role-badge">{{ auth()->user()->role }}</span>
-                        </div>
-                    </div>
+                    </a>
                     
                     <form action="/logout" method="POST" class="m-0">
                         @csrf 
-                        <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-3 fw-bold">
-                            <i class="fas fa-sign-out-alt me-1"></i> Logout
+                        <button type="submit" class="btn btn-logout btn-sm">
+                            <i class="fas fa-power-off me-1"></i> Keluar
                         </button>
                     </form>
                 </div>
@@ -147,28 +185,34 @@
         </div>
     </nav>
 
-    <main class="py-4">
+    <main class="py-5">
         <div class="container">
-            @if(session('success'))
-                <div class="alert alert-success alert-dismissible fade show d-flex align-items-center" role="alert">
-                    <i class="fas fa-check-circle me-2"></i>
-                    <div>{{ session('success') }}</div>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            @endif
-
-            @if(session('error'))
-                <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center" role="alert">
-                    <i class="fas fa-exclamation-triangle me-2"></i>
-                    <div>{{ session('error') }}</div>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            @endif
-
             @yield('content')
         </div>
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        @if(session('success'))
+            Swal.fire({
+                icon: 'success',
+                title: 'Berhasil!',
+                text: "{{ session('success') }}",
+                showConfirmButton: false,
+                timer: 2500,
+                border: 'none'
+            });
+        @endif
+
+        @if(session('error'))
+            Swal.fire({
+                icon: 'error',
+                title: 'Oops...',
+                text: "{{ session('error') }}",
+                confirmButtonColor: '#4361ee'
+            });
+        @endif
+    </script>
 </body>
 </html>
