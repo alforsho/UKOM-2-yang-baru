@@ -7,6 +7,24 @@ use Illuminate\Http\Request;
 
 class BukuController extends Controller
 {
+    // --- FITUR KATALOG DEMO (Akses Publik) ---
+    public function indexDemo(Request $request)
+    {
+        $query = Buku::query();
+
+        // Fitur Pencarian di Halaman Demo
+        $query->when($request->search, function ($q) use ($request) {
+            return $q->where('nama_buku', 'like', '%' . $request->search . '%')
+                     ->orWhere('penerbit', 'like', '%' . $request->search . '%');
+        });
+
+        // Ambil data buku untuk ditampilkan di dashboard/demo.blade.php
+        $books = $query->latest()->get();
+
+        return view('dashboard.demo', compact('books'));
+    }
+
+    // --- FITUR KELOLA BUKU (Akses Admin) ---
     public function index(Request $request)
     {
         $query = Buku::query();
@@ -25,7 +43,7 @@ class BukuController extends Controller
             $query->where('stok', '<=', 0);
         }
 
-        // Urutkan dari yang terbaru ditambahkan
+        // Urutkan dari yang terbaru ditambahkan (Hanya yang tidak terhapus)
         $bukus = $query->latest()->get();
 
         return view('buku.index', compact('bukus'));
@@ -45,7 +63,8 @@ class BukuController extends Controller
 
     public function edit($id)
     {
-        return response()->json(Buku::findOrFail($id));
+        // Mendukung pencarian data termasuk yang diarsip (untuk keperluan restore/view)
+        return response()->json(Buku::withTrashed()->findOrFail($id));
     }
 
     public function update(Request $request, $id)
@@ -56,13 +75,41 @@ class BukuController extends Controller
             'stok' => 'required|numeric',
         ]);
 
-        Buku::findOrFail($id)->update($request->all());
+        Buku::withTrashed()->findOrFail($id)->update($request->all());
         return back()->with('success', 'Data buku berhasil diperbarui!');
     }
 
+    // --- FITUR ARSIP & DELETE ---
+
+    // 1. Soft Delete (Masuk ke Arsip)
     public function destroy($id)
     {
         Buku::destroy($id);
-        return back()->with('success', 'Buku berhasil dihapus!');
+        return back()->with('success', 'Buku berhasil dipindahkan ke arsip!');
+    }
+
+    // 2. Tampilkan Halaman Arsip Buku
+    public function arsip()
+    {
+        $arsip = Buku::onlyTrashed()->latest()->get();
+        return view('buku.arsip', compact('arsip'));
+    }
+
+    // 3. Restore Buku (Kembalikan dari Arsip)
+    public function restore($id)
+    {
+        $buku = Buku::onlyTrashed()->findOrFail($id);
+        $buku->restore();
+
+        return back()->with('success', 'Buku berhasil dikembalikan dari arsip!');
+    }
+
+    // 4. Force Delete (Hapus Permanen)
+    public function forceDelete($id)
+    {
+        $buku = Buku::onlyTrashed()->findOrFail($id);
+        $buku->forceDelete();
+
+        return back()->with('success', 'Buku telah dihapus permanen dari sistem!');
     }
 }

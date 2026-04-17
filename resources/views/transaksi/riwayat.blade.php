@@ -1,104 +1,145 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container py-4">
+<div class="container-fluid py-4 px-4">
+    {{-- Header --}}
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h3 class="fw-bold text-dark mb-1">Riwayat Pinjaman</h3>
-            <p class="text-muted small">Pantau status peminjaman dan pengembalian buku kamu.</p>
+            <h4 class="fw-bold text-dark mb-1">Riwayat Pinjaman</h4>
+            <p class="text-muted small">Pantau status peminjaman dan pengembalian buku kamu</p>
         </div>
-        <a href="{{ route('transaksi.pinjam') }}" class="btn btn-primary btn-sm rounded-pill px-4 fw-bold">
-            <i class="fas fa-plus me-1"></i> Pinjam Buku
+        <a href="{{ route('transaksi.pinjam') }}" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm">
+            <i class="fas fa-plus-circle me-2"></i>PINJAM BUKU
         </a>
     </div>
 
-    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+    {{-- Tabel Riwayat --}}
+    <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
         <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="bg-primary bg-opacity-10">
+            <div class="table-responsive-scroll">
+                <table class="table table-hover mb-0 align-middle">
+                    <thead class="bg-light text-secondary small fw-bold">
                         <tr>
-                            <th class="px-4 py-3 small fw-bold text-primary">BUKU</th>
-                            <th class="py-3 small fw-bold text-center text-primary">TGL PINJAM</th>
-                            <th class="py-3 small fw-bold text-center text-primary">DEADLINE</th>
-                            <th class="py-3 small fw-bold text-center text-primary">STATUS</th>
-                            <th class="py-3 small fw-bold text-end text-primary">DENDA</th>
-                            <th class="px-4 py-3 small fw-bold text-center text-primary">AKSI</th>
+                            <th class="ps-4 py-3 border-0">BUKU</th>
+                            <th class="border-0 text-center">TGL PENJAM</th>
+                            <th class="border-0 text-center">DEADLINE</th>
+                            <th class="border-0 text-center">STATUS</th>
+                            <th class="border-0 text-end">DENDA</th>
+                            <th class="text-center pe-4 border-0">AKSI</th>
                         </tr>
                     </thead>
-                    <tbody class="border-top-0">
-                        @foreach($transaksis as $t)
-                        <tr>
-                            <td class="px-4">
+                    <tbody>
+                        @forelse($transaksis as $t)
+                        <tr style="border-bottom: 1px solid #f8f9fa;">
+                            <td class="ps-4 py-3">
                                 <div class="d-flex align-items-center">
-                                    <div class="bg-light rounded-3 p-2 me-3 d-none d-sm-block">
-                                        <i class="fas fa-book text-secondary"></i>
+                                    <div class="book-icon-box me-3">
+                                        <i class="fas fa-book text-primary"></i>
                                     </div>
-                                    <span class="fw-bold text-dark">{{ $t->nama_buku }}</span>
+                                    <div>
+                                        <div class="fw-bold text-dark mb-0 small">{{ $t->nama_buku }}</div>
+                                        <div class="text-muted" style="font-size: 0.7rem;">ID Transaksi: #{{ $t->id_transaksi }}</div>
+                                    </div>
                                 </div>
                             </td>
                             <td class="text-center">
-                                <span class="text-muted small">{{ date('d M Y', strtotime($t->tanggal_peminjaman)) }}</span>
+                                <span class="text-muted small fw-medium">{{ date('d M Y', strtotime($t->tanggal_peminjaman)) }}</span>
                             </td>
                             <td class="text-center">
-                                <span class="text-muted small">{{ date('d M Y', strtotime($t->tanggal_pengembalian)) }}</span>
+                                <span class="text-muted small fw-medium">{{ date('d M Y', strtotime($t->tanggal_pengembalian)) }}</span>
                             </td>
                             <td class="text-center">
-                                @if($t->status == 'Dipinjam')
-                                    <span class="badge bg-warning bg-opacity-10 text-warning rounded-pill px-3 border border-warning border-opacity-25">
-                                        <i class="fas fa-clock me-1 small"></i> Sedang Dipinjam
+                                @if($t->status == 'Pending')
+                                    <span class="badge bg-soft-secondary text-secondary rounded-pill px-3 py-1 fw-bold" style="font-size: 9px; border: 1px solid currentColor;">
+                                        <i class="fas fa-hourglass-half me-1"></i> PENDING
+                                    </span>
+                                @elseif($t->status == 'Dipinjam')
+                                    <span class="badge bg-soft-warning text-warning rounded-pill px-3 py-1 fw-bold" style="font-size: 9px; border: 1px solid currentColor;">
+                                        <i class="fas fa-clock me-1"></i> DIPINJAM
                                     </span>
                                 @else
-                                    <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 border border-success border-opacity-25">
-                                        <i class="fas fa-check-circle me-1 small"></i> Dikembalikan
+                                    <span class="badge bg-soft-info text-info rounded-pill px-3 py-1 fw-bold" style="font-size: 9px; border: 1px solid currentColor;">
+                                        <i class="fas fa-check-circle me-1"></i> DIKEMBALIKAN
                                     </span>
                                 @endif
                             </td>
-                            <td class="text-end fw-bold {{ $t->total_denda > 0 ? 'text-danger' : 'text-muted' }}">
+                            <td class="text-end fw-bold {{ $t->total_denda > 0 ? 'text-danger' : 'text-muted' }} small">
                                 Rp{{ number_format($t->total_denda, 0, ',', '.') }}
                             </td>
-                            <td class="px-4 text-center">
-                                @if($t->status == 'Dipinjam')
-                                    <button class="btn btn-light btn-sm rounded-pill text-muted border-0" disabled title="Struk tersedia setelah dikembalikan">
-                                        <i class="fas fa-print opacity-50"></i>
-                                    </button>
-                                @else
+                            <td class="text-center pe-4">
+                                {{-- Aksi Cetak Struk hanya aktif jika sudah dikembalikan --}}
+                                @if($t->status == 'Dikembalikan')
                                     <a href="{{ route('transaksi.cetak', $t->id_transaksi) }}" 
                                        target="_blank" 
-                                       class="btn btn-outline-primary btn-sm rounded-pill px-3 fw-bold">
-                                        <i class="fas fa-print me-1"></i> Struk
+                                       class="btn btn-sm btn-outline-primary border-0 p-2" 
+                                       title="Cetak Struk">
+                                        <i class="fas fa-print"></i>
                                     </a>
+                                @else
+                                    <button class="btn btn-sm btn-outline-secondary border-0 p-2 opacity-50" disabled title="Tersedia setelah buku kembali">
+                                        <i class="fas fa-print"></i>
+                                    </button>
                                 @endif
                             </td>
                         </tr>
-                        @endforeach
+                        @empty
+                        <tr>
+                            <td colspan="6" class="text-center py-5">
+                                <div class="py-4">
+                                    <i class="fas fa-history fa-3x mb-3 text-muted opacity-25"></i>
+                                    <p class="text-muted small">Kamu belum memiliki riwayat peminjaman buku.</p>
+                                    <a href="{{ route('transaksi.pinjam') }}" class="btn btn-sm btn-outline-primary rounded-pill px-4 mt-2">
+                                        Mulai Pinjam Sekarang
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        @endforelse
                     </tbody>
                 </table>
             </div>
-            @if($transaksis->isEmpty())
-                <div class="text-center py-5">
-                    <img src="https://illustrations.popsy.co/blue/work-from-home.svg" style="width: 150px;" class="mb-3">
-                    <p class="text-muted">Kamu belum pernah meminjam buku apapun.</p>
-                </div>
-            @endif
         </div>
     </div>
 </div>
 
 <style>
-    .table thead th {
-        letter-spacing: 0.5px;
-        border-bottom: none;
+    body { background-color: #f8f9fc; }
+    
+    /* Skema warna soft untuk badge status */
+    .bg-soft-warning { background-color: #fffaf0 !important; color: #dd6b20 !important; }
+    .bg-soft-info { background-color: #f0f9ff !important; color: #0ea5e9 !important; }
+    /* Tambahan untuk status Pending */
+    .bg-soft-secondary { background-color: #f1f5f9 !important; color: #64748b !important; }
+
+    .book-icon-box {
+        width: 38px;
+        height: 38px;
+        background-color: #f0f4ff;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
     }
+
     .table tbody tr {
-        transition: all 0.2s;
+        transition: all 0.2s ease;
     }
     .table tbody tr:hover {
         background-color: #fbfcfe;
     }
-    .badge {
-        font-weight: 600;
-        font-size: 0.75rem;
+
+    .table-responsive-scroll {
+        max-height: 70vh;
+        overflow-y: auto;
+    }
+    
+    .table-responsive-scroll::-webkit-scrollbar {
+        width: 6px;
+    }
+    .table-responsive-scroll::-webkit-scrollbar-thumb {
+        background: #e2e8f0;
+        border-radius: 10px;
     }
 </style>
 @endsection

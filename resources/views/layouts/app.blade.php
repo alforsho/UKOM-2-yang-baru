@@ -136,6 +136,48 @@
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
+
+        /* ============================================================
+           BAGIAN PERUBAHAN TABEL (DITAMBAHKAN)
+           ============================================================ */
+        
+        /* Wadah Tabel yang membatasi scroll */
+        .table-responsive-scroll {
+            max-height: 400px; /* Data akan terpotong setelah baris ke-5/6 */
+            overflow-y: auto;
+            border-radius: 0 0 12px 12px;
+        }
+
+        /* Membuat header tabel tetap diam di atas (Sticky) */
+        .table thead th {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background-color: #ffffff !important;
+            border-bottom: 2px solid #edf2f7 !important;
+            box-shadow: inset 0 -1px 0 #edf2f7;
+        }
+
+        /* Mempercantik Scrollbar */
+        .table-responsive-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .table-responsive-scroll::-webkit-scrollbar-track {
+            background: #f8faff;
+        }
+        .table-responsive-scroll::-webkit-scrollbar-thumb {
+            background: #cbd5e0;
+            border-radius: 10px;
+        }
+        .table-responsive-scroll::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-color);
+        }
+
+        /* Merapikan sel tabel */
+        .table td {
+            padding: 1rem 0.75rem;
+            vertical-align: middle;
+        }
     </style>
 </head>
 <body>
@@ -151,18 +193,19 @@
 
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-5">
-                    @if(auth()->user()->role == 'admin')
+                    @if(auth()->check() && auth()->user()->role == 'admin')
                         <li class="nav-item"><a class="nav-link {{ Request::is('admin/dashboard') ? 'active' : '' }}" href="/admin/dashboard">Dashboard</a></li>
                         <li class="nav-item"><a class="nav-link {{ Request::is('admin/buku*') ? 'active' : '' }}" href="/admin/buku">Katalog</a></li>
                         <li class="nav-item"><a class="nav-link {{ Request::is('admin/anggota*') ? 'active' : '' }}" href="/admin/anggota">Anggota</a></li>
                         <li class="nav-item"><a class="nav-link {{ Request::is('transaksi') ? 'active' : '' }}" href="/transaksi">Semua Transaksi</a></li>
-                    @else
+                    @elseif(auth()->check())
                         <li class="nav-item"><a class="nav-link {{ Request::is('siswa/dashboard') ? 'active' : '' }}" href="/siswa/dashboard">Home</a></li>
                         <li class="nav-item"><a class="nav-link {{ Request::is('transaksi/pinjam') ? 'active' : '' }}" href="{{ route('transaksi.pinjam') }}">Peminjaman</a></li>
                         <li class="nav-item"><a class="nav-link {{ Request::is('transaksi/riwayat') ? 'active' : '' }}" href="{{ route('transaksi.riwayat') }}">Riwayat</a></li>
                     @endif
                 </ul>
 
+                @if(auth()->check())
                 <div class="d-flex align-items-center gap-3">
                     <a href="{{ route('profil') }}" class="user-profile-link">
                         <div class="user-profile">
@@ -181,6 +224,7 @@
                         </button>
                     </form>
                 </div>
+                @endif
             </div>
         </div>
     </nav>
@@ -200,8 +244,7 @@
                 title: 'Berhasil!',
                 text: "{{ session('success') }}",
                 showConfirmButton: false,
-                timer: 2500,
-                border: 'none'
+                timer: 2500
             });
         @endif
 

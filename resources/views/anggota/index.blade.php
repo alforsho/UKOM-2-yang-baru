@@ -7,11 +7,12 @@
             <h4 class="fw-bold text-dark mb-1">Manajemen Pengguna</h4>
             <p class="text-muted small">Kelola data admin dan siswa perpustakaan</p>
         </div>
-        <button class="btn btn-primary rounded-3 px-4 fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#modalTambah">
+        <button class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#modalTambah">
             <i class="fas fa-plus-circle me-2"></i>TAMBAH USER
         </button>
     </div>
 
+    {{-- Filter Terpadu --}}
     <div class="card shadow-sm border-0 rounded-4 mb-4">
         <div class="card-body p-3">
             <form action="/admin/anggota" method="GET" class="row g-2 align-items-center">
@@ -36,9 +37,11 @@
         </div>
     </div>
 
+    {{-- Tabel Pengguna --}}
     <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
         <div class="card-body p-0">
-            <div class="table-responsive">
+            {{-- PEMBUNGKUS SCROLL INTERNAL --}}
+            <div class="table-responsive-scroll">
                 <table class="table table-hover mb-0 align-middle">
                     <thead class="bg-light text-secondary small fw-bold">
                         <tr>
@@ -57,26 +60,26 @@
                                         {{ strtoupper(substr($u->nama, 0, 1)) }}
                                     </div>
                                     <div>
-                                        <div class="fw-bold text-dark mb-0">{{ $u->nama }}</div>
-                                        <div class="text-muted small">@ {{ $u->username }}</div>
+                                        <div class="fw-bold text-dark mb-0 small">{{ $u->nama }}</div>
+                                        <div class="text-muted" style="font-size: 0.7rem;">@ {{ $u->username }}</div>
                                     </div>
                                 </div>
                             </td>
                             <td class="text-center">
-                                <span class="badge {{ $u->role == 'admin' ? 'bg-soft-danger text-danger' : 'bg-soft-info text-info' }} rounded-pill px-3 py-2 fw-bold" style="font-size: 10px;">
+                                <span class="badge {{ $u->role == 'admin' ? 'bg-soft-danger text-danger' : 'bg-soft-info text-info' }} rounded-pill px-3 py-1 fw-bold" style="font-size: 9px; border: 1px solid currentColor;">
                                     {{ strtoupper($u->role) }}
                                 </span>
                             </td>
                             <td class="small">
                                 @if($u->role == 'siswa')
-                                    <div class="fw-bold text-dark">{{ $u->nis }}</div> 
-                                    <div class="text-muted" style="font-size: 11px;">{{ $u->kelas }} {{ $u->jurusan }}</div>
+                                    <div class="fw-bold text-dark" style="font-size: 0.75rem;">{{ $u->nis }}</div> 
+                                    <div class="text-muted" style="font-size: 0.65rem;">{{ $u->kelas }} {{ $u->jurusan }}</div>
                                 @else
-                                    <span class="text-muted opacity-50 italic">Administrator System</span>
+                                    <span class="text-muted opacity-50 italic" style="font-size: 0.7rem;">Administrator System</span>
                                 @endif
                             </td>
                             <td class="text-center pe-4">
-                                <div class="btn-group gap-1">
+                                <div class="d-flex justify-content-center gap-1">
                                     <a href="/admin/anggota/show/{{ $u->id }}" class="btn btn-sm btn-outline-info border-0 p-2" title="Detail & Cetak">
                                         <i class="fas fa-eye"></i>
                                     </a>
@@ -104,6 +107,7 @@
     </div>
 </div>
 
+{{-- MODAL TAMBAH --}}
 <div class="modal fade" id="modalTambah" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg rounded-4">
@@ -163,14 +167,15 @@
                     </div>
                 </div>
                 <div class="modal-footer border-0 pb-4 px-4">
-                    <button type="button" class="btn btn-light rounded-3 px-4" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-primary rounded-3 px-4 fw-bold">SIMPAN DATA</button>
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold">SIMPAN DATA</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
 
+{{-- MODAL EDIT --}}
 <div class="modal fade" id="modalEdit" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg rounded-4">
@@ -230,8 +235,8 @@
                     </div>
                 </div>
                 <div class="modal-footer border-0 pb-4 px-4">
-                    <button type="button" class="btn btn-light rounded-3 px-4" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-warning rounded-3 px-4 fw-bold text-white">UPDATE DATA</button>
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-warning rounded-pill px-4 fw-bold text-white">UPDATE DATA</button>
                 </div>
             </form>
         </div>
@@ -239,24 +244,19 @@
 </div>
 
 <style>
-    body { background-color: #f8f9fc; font-family: 'Inter', sans-serif; }
-    .bg-soft-danger { background-color: #fff5f5; }
-    .bg-soft-info { background-color: #f0f9ff; }
+    .bg-soft-danger { background-color: #fff5f5 !important; color: #e53e3e !important; }
+    .bg-soft-info { background-color: #f0f9ff !important; color: #0ea5e9 !important; }
     .avatar-box {
-        width: 42px;
-        height: 42px;
+        width: 38px;
+        height: 38px;
         color: white;
-        border-radius: 12px;
+        border-radius: 10px;
         display: flex;
         align-items: center;
         justify-content: center;
         font-weight: 800;
-        font-size: 16px;
+        font-size: 14px;
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    }
-    .form-control:focus, .form-select:focus {
-        background-color: #fff !important;
-        border-color: #4e73df !important;
     }
     .italic { font-style: italic; }
 </style>

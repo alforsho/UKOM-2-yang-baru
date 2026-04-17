@@ -11,16 +11,25 @@ class CreateBukusTable extends Migration
      *
      * @return void
      */
-public function up()
-{
-    Schema::create('buku', function (Blueprint $table) {
-        $table->id('id_buku'); // Atribut id_buku
-        $table->string('nama_buku'); // Atribut nama_buku
-        $table->string('penerbit'); // Atribut penerbit
-        $table->integer('stok'); // Atribut stok
-        $table->timestamps();
-    });
-}
+    public function up()
+    {
+        Schema::create('buku', function (Blueprint $table) {
+            // 1. Primary Key: id_buku
+            $table->id('id_buku'); 
+
+            // 2. Atribut Buku
+            $table->string('nama_buku'); 
+            $table->string('penerbit'); 
+            $table->integer('stok'); 
+
+            // 3. Timestamps (created_at & updated_at)
+            // Meskipun di Model diset false, sangat disarankan tetap ada di DB untuk audit
+            $table->timestamps();
+
+            // 4. FITUR ARSIP: deleted_at (WAJIB untuk SoftDeletes)
+            $table->softDeletes();
+        });
+    }
 
     /**
      * Reverse the migrations.
@@ -29,6 +38,6 @@ public function up()
      */
     public function down()
     {
-        Schema::dropIfExists('bukus');
+        Schema::dropIfExists('buku'); // Pastikan nama tabel sinkron 'buku', bukan 'bukus'
     }
 }

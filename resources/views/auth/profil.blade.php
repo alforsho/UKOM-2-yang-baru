@@ -5,14 +5,24 @@
     <div class="col-md-8 col-lg-6">
         <div class="card border-0 shadow-sm rounded-4">
             <div class="card-body p-4">
-                <div class="d-flex align-items-center mb-4">
-                    <div class="user-avatar me-3" style="width: 60px; height: 60px; font-size: 1.5rem; background: #0d6efd; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">
-                        {{ strtoupper(substr($user->nama, 0, 1)) }}
+                {{-- Header & Tombol Cetak --}}
+                <div class="d-flex align-items-center justify-content-between mb-4">
+                    <div class="d-flex align-items-center">
+                        <div class="user-avatar me-3" style="width: 60px; height: 60px; font-size: 1.5rem; background: #0d6efd; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">
+                            {{ strtoupper(substr($user->nama, 0, 1)) }}
+                        </div>
+                        <div>
+                            <h4 class="fw-bold mb-0 text-dark">{{ $user->nama }}</h4>
+                            <p class="text-muted mb-0 small">Kelola informasi profil dan keamanan</p>
+                        </div>
                     </div>
-                    <div>
-                        <h4 class="fw-bold mb-0 text-dark">{{ $user->nama }}</h4>
-                        <p class="text-muted mb-0 small">Kelola informasi profil dan keamanan akun Anda</p>
-                    </div>
+                    
+                    @if(auth()->user()->role == 'siswa')
+                        {{-- Direct ke show dengan parameter from=profil agar tombol kembali pas --}}
+                        <a href="{{ route('anggota.show', $user->id) }}?from=profil" target="_blank" class="btn btn-outline-danger btn-sm rounded-pill px-3 fw-bold">
+                            <i class="fas fa-print me-2"></i>Cetak Kartu
+                        </a>
+                    @endif
                 </div>
 
                 <form action="{{ route('profil.update') }}" method="POST">
@@ -34,7 +44,8 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="form-label small fw-bold text-secondary">NIS</label>
-                            <input type="text" class="form-control bg-light border-0 py-2" value="{{ $user->nis }}" readonly disabled>
+                            {{-- NIS biasanya readonly karena ID unik siswa --}}
+                            <input type="text" name="nis" class="form-control bg-light border-0 py-2" value="{{ $user->nis }}" readonly>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label small fw-bold text-secondary">No. Telepon</label>

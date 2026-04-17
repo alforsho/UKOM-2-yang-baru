@@ -6,10 +6,14 @@
     <div class="row mb-4 align-items-center">
         <div class="col-md-6">
             <h3 class="fw-bold text-dark mb-1">Monitoring Transaksi</h3>
-            <p class="text-muted mb-0">Kelola aktivitas sirkulasi buku perpustakaan.</p>
+            <p class="text-muted mb-0">Kelola aktivitas sirkulasi dan persetujuan pinjaman.</p>
         </div>
         <div class="col-md-6 text-md-end d-flex justify-content-md-end gap-2 mt-3 mt-md-0">
-            {{-- TOMBOL CETAK LAPORAN (Output: all.pdf) --}}
+            {{-- Tombol Lihat Arsip --}}
+            <a href="{{ route('transaksi.arsip') }}" class="btn btn-outline-dark shadow-sm rounded-pill px-4 py-2 fw-bold bg-white">
+                <i class="fas fa-archive me-2"></i>Lihat Arsip
+            </a>
+
             <a href="{{ route('transaksi.cetak_semua', request()->query()) }}" class="btn btn-success shadow-sm rounded-pill px-4 py-2 fw-bold">
                 <i class="fas fa-file-pdf me-2"></i>Cetak Laporan
             </a>
@@ -24,7 +28,6 @@
     <div class="card border-0 shadow-sm rounded-4 mb-4">
         <div class="card-body p-4">
             <form action="{{ url('transaksi') }}" method="GET" class="row g-3">
-                {{-- Pencarian Nama/Buku --}}
                 <div class="col-lg-12 mb-2">
                     <label class="small fw-bold text-muted mb-1 text-uppercase">Cari Siswa / Buku</label>
                     <div class="input-group">
@@ -33,16 +36,14 @@
                     </div>
                 </div>
 
-                {{-- Filter Tanggal --}}
                 <div class="col-lg-3">
                     <label class="small fw-bold text-muted mb-1 text-uppercase">Tanggal</label>
                     <input type="number" name="tgl" class="form-control bg-light border-0" placeholder="1-31" min="1" max="31" value="{{ request('tgl') }}">
                 </div>
 
-                {{-- Filter Bulan --}}
                 <div class="col-lg-3">
                     <label class="small fw-bold text-muted mb-1 text-uppercase">Bulan</label>
-                    <select name="bln" class="form-select bg-light border-0">
+                    <select name="bln" class="form-select bg-light border-0 shadow-none">
                         <option value="">Semua Bulan</option>
                         @foreach(range(1, 12) as $m)
                             <option value="{{ $m }}" {{ request('bln') == $m ? 'selected' : '' }}>
@@ -52,10 +53,9 @@
                     </select>
                 </div>
 
-                {{-- Filter Tahun --}}
                 <div class="col-lg-3">
                     <label class="small fw-bold text-muted mb-1 text-uppercase">Tahun</label>
-                    <select name="thn" class="form-select bg-light border-0">
+                    <select name="thn" class="form-select bg-light border-0 shadow-none">
                         <option value="">Semua Tahun</option>
                         @for($y = date('Y'); $y >= 2020; $y--)
                             <option value="{{ $y }}" {{ request('thn') == $y ? 'selected' : '' }}>{{ $y }}</option>
@@ -63,7 +63,6 @@
                     </select>
                 </div>
 
-                {{-- Tombol Aksi --}}
                 <div class="col-lg-3 d-flex align-items-end gap-2">
                     <button type="submit" class="btn btn-dark w-100 fw-bold py-2 shadow-sm">
                         <i class="fas fa-filter me-1"></i> Filter
@@ -76,89 +75,94 @@
         </div>
     </div>
 
-    @if(session('success')) <div class="alert alert-success border-0 shadow-sm rounded-4 mb-4 small">{{ session('success') }}</div> @endif
-    @if(session('error')) <div class="alert alert-danger border-0 shadow-sm rounded-4 mb-4 small">{{ session('error') }}</div> @endif
+    @if(session('success')) <div class="alert alert-success border-0 shadow-sm rounded-4 mb-4 small"><i class="fas fa-check-circle me-2"></i> {{ session('success') }}</div> @endif
+    @if(session('error')) <div class="alert alert-danger border-0 shadow-sm rounded-4 mb-4 small"><i class="fas fa-exclamation-circle me-2"></i> {{ session('error') }}</div> @endif
 
     {{-- Tabel Transaksi --}}
     <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
         <div class="card-body p-0">
-            <div class="table-responsive">
+            <div class="table-responsive-scroll">
                 <table class="table table-hover align-middle mb-0">
                     <thead class="bg-light">
                         <tr class="text-muted fw-bold small text-uppercase">
                             <th class="ps-4 py-3 border-0">Peminjam</th>
                             <th class="py-3 border-0">Buku</th>
                             <th class="py-3 border-0 text-center text-nowrap">Tgl Pinjam</th>
-                            <th class="py-3 border-0 text-center text-nowrap text-danger">Deadline</th>
                             <th class="py-3 border-0 text-center">Status</th>
                             <th class="py-3 border-0 text-center text-nowrap">Denda</th>
                             <th class="text-end pe-4 py-3 border-0">Aksi</th>
                         </tr>
                     </thead>
                     <tbody class="border-top-0">
-                        @forelse($transaksis as $index => $t)
+                        @forelse($transaksis as $t)
                         <tr>
                             <td class="ps-4 py-3">
                                 <div class="d-flex align-items-center">
-                                    <div class="avatar me-3 bg-primary text-white rounded-circle d-flex align-items-center justify-content-center fw-bold shadow-sm" style="width: 40px; height: 40px; min-width: 40px;">
+                                    <div class="avatar me-3 bg-primary text-white rounded-circle d-flex align-items-center justify-content-center fw-bold shadow-sm" style="width: 38px; height: 38px; font-size: 0.9rem;">
                                         {{ strtoupper(substr($t->nama, 0, 1)) }}
                                     </div>
                                     <div>
-                                        <div class="fw-bold text-dark text-capitalize">{{ $t->nama }}</div>
-                                        <small class="text-muted small">No: {{ $index + 1 }}</small>
+                                        <div class="fw-bold text-dark text-capitalize small">{{ $t->nama }}</div>
+                                        <small class="text-muted" style="font-size: 0.7rem;">#{{ $t->id_transaksi }}</small>
                                     </div>
                                 </div>
                             </td>
                             <td>
-                                <div class="text-dark fw-medium text-truncate" style="max-width: 180px;">{{ $t->nama_buku }}</div>
+                                <div class="text-dark fw-medium text-truncate small" style="max-width: 150px;" title="{{ $t->nama_buku }}">
+                                    {{ $t->nama_buku }}
+                                </div>
                             </td>
                             <td class="text-center text-nowrap text-muted small">
                                 {{ \Carbon\Carbon::parse($t->tanggal_peminjaman)->format('d/m/Y') }}
                             </td>
-                            <td class="text-center text-nowrap small">
-                                <span class="{{ $t->status == 'Dipinjam' && \Carbon\Carbon::now()->gt($t->tanggal_pengembalian) ? 'text-danger fw-bold' : 'text-muted' }}">
-                                    {{ \Carbon\Carbon::parse($t->tanggal_pengembalian)->format('d/m/Y') }}
-                                </span>
-                            </td>
                             <td class="text-center">
-                                <span class="badge {{ $t->status == 'Dipinjam' ? 'bg-soft-warning text-warning' : 'bg-soft-success text-success' }} rounded-pill px-3 py-2 border" style="font-size: 0.7rem;">
-                                    {{ strtoupper($t->status) }}
-                                </span>
+                                @if($t->status == 'Pending')
+                                    <span class="badge bg-soft-secondary text-secondary rounded-pill px-3 py-1 border" style="font-size: 0.65rem;">
+                                        <i class="fas fa-hourglass-half me-1"></i> PENDING
+                                    </span>
+                                @elseif($t->status == 'Dipinjam')
+                                    <span class="badge bg-soft-warning text-warning rounded-pill px-3 py-1 border" style="font-size: 0.65rem;">
+                                        <i class="fas fa-book-reader me-1"></i> DIPINJAM
+                                    </span>
+                                @else
+                                    <span class="badge bg-soft-success text-success rounded-pill px-3 py-1 border" style="font-size: 0.65rem;">
+                                        <i class="fas fa-check-circle me-1"></i> KEMBALI
+                                    </span>
+                                @endif
                             </td>
                             <td class="text-center">
                                 @if($t->total_denda > 0)
-                                    @if($t->status == 'Dikembalikan')
-                                        <span class="text-muted small text-decoration-line-through">Rp {{ number_format($t->total_denda, 0, ',', '.') }}</span>
-                                        <div style="font-size: 0.65rem;" class="text-success fw-bold text-uppercase">Lunas</div>
-                                    @else
-                                        <span class="text-danger fw-bold small">Rp {{ number_format($t->total_denda, 0, ',', '.') }}</span>
-                                    @endif
+                                    <span class="{{ $t->status == 'Dikembalikan' ? 'text-muted text-decoration-line-through' : 'text-danger fw-bold' }} small">
+                                        Rp{{ number_format($t->total_denda, 0, ',', '.') }}
+                                    </span>
                                 @else
                                     <span class="text-muted small">-</span>
                                 @endif
                             </td>
                             <td class="text-end pe-4">
                                 <div class="d-flex justify-content-end gap-1">
-                                    {{-- Cetak Struk Satuan --}}
-                                    <a href="{{ route('transaksi.cetak', $t->id_transaksi) }}" target="_blank" class="btn btn-sm btn-outline-secondary border-0 rounded-3" title="Cetak Struk">
-                                        <i class="fas fa-print"></i>
-                                    </a>
-
-                                    @if($t->status == 'Dipinjam')
-                                        <a href="{{ url('transaksi/kembali/'.$t->id_transaksi) }}" class="btn btn-sm btn-success rounded-pill px-3 fw-bold shadow-sm mx-1">
+                                    @if($t->status == 'Pending')
+                                        <a href="{{ url('transaksi/edit/'.$t->id_transaksi) }}" class="btn btn-sm btn-primary rounded-pill px-3 fw-bold shadow-sm" style="font-size: 0.7rem;">
+                                            Setujui
+                                        </a>
+                                    @elseif($t->status == 'Dipinjam')
+                                        <a href="{{ url('transaksi/kembali/'.$t->id_transaksi) }}" class="btn btn-sm btn-success rounded-pill px-3 fw-bold shadow-sm" style="font-size: 0.7rem;">
                                             Kembali
                                         </a>
                                     @endif
 
                                     <div class="dropdown">
-                                        <button class="btn btn-sm btn-light border-0 rounded-3" type="button" data-bs-toggle="dropdown">
-                                            <i class="fas fa-ellipsis-v"></i>
+                                        <button class="btn btn-sm btn-light border-0" type="button" data-bs-toggle="dropdown">
+                                            <i class="fas fa-ellipsis-v text-muted"></i>
                                         </button>
-                                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3">
-                                            <li><a class="dropdown-item small" href="{{ url('transaksi/show/'.$t->id_transaksi) }}"><i class="fas fa-eye me-2 text-info"></i>Detail</a></li>
-                                            <li><a class="dropdown-item small" href="{{ url('transaksi/edit/'.$t->id_transaksi) }}"><i class="fas fa-edit me-2 text-primary"></i>Edit</a></li>
+                                        <ul class="dropdown-menu dropdown-menu-end shadow border-0 small">
+                                            <li><a class="dropdown-item" href="{{ route('transaksi.cetak', $t->id_transaksi) }}" target="_blank"><i class="fas fa-print me-2 text-secondary"></i>Cetak Struk</a></li>
+                                            <li><a class="dropdown-item" href="{{ url('transaksi/show/'.$t->id_transaksi) }}"><i class="fas fa-eye me-2 text-info"></i>Detail</a></li>
+                                            <li><a class="dropdown-item" href="{{ url('transaksi/edit/'.$t->id_transaksi) }}"><i class="fas fa-edit me-2 text-primary"></i>Edit Data</a></li>
                                             <li><hr class="dropdown-divider"></li>
-                                            <li><a class="dropdown-item small text-danger" href="{{ url('transaksi/delete/'.$t->id_transaksi) }}" onclick="return confirm('Hapus transaksi ini?')"><i class="fas fa-trash me-2"></i>Hapus</a></li>
+                                            {{-- Menu Arsip Baru --}}
+                                            <li><a class="dropdown-item text-warning" href="{{ route('transaksi.masukArsip', $t->id_transaksi) }}" onclick="return confirm('Pindahkan data ini ke arsip?')"><i class="fas fa-archive me-2"></i>Arsipkan</a></li>
+                                            <li><a class="dropdown-item text-danger" href="{{ url('transaksi/delete/'.$t->id_transaksi) }}" onclick="return confirm('Hapus transaksi ini secara permanen?')"><i class="fas fa-trash me-2"></i>Hapus</a></li>
                                         </ul>
                                     </div>
                                 </div>
@@ -166,8 +170,9 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="7" class="text-center py-5">
-                                <p class="text-muted">Data transaksi tidak ditemukan untuk filter ini.</p>
+                            <td colspan="6" class="text-center py-5">
+                                <img src="https://illustrations.popsy.co/gray/box.svg" alt="empty" style="width: 80px;" class="mb-3 opacity-50">
+                                <p class="text-muted small mb-0">Tidak ada data transaksi yang ditemukan.</p>
                             </td>
                         </tr>
                         @endforelse
@@ -178,13 +183,6 @@
     </div>
 </div>
 
-<style>
-    .bg-soft-warning { background-color: #fffbeb; color: #d97706; border-color: #fde68a !important; }
-    .bg-soft-success { background-color: #f0fdf4; color: #16a34a; border-color: #bbf7d0 !important; }
-    .avatar { flex-shrink: 0; }
-    .text-decoration-line-through { text-decoration: line-through !important; }
-</style>
-
 {{-- Modal Tambah --}}
 <div class="modal fade" id="modalTambah" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
@@ -192,13 +190,13 @@
             <form action="{{ url('transaksi/store') }}" method="POST">
                 @csrf
                 <div class="modal-header border-0 p-4 pb-0">
-                    <h5 class="fw-bold">Input Pinjaman Baru</h5>
+                    <h5 class="fw-bold"><i class="fas fa-plus-circle text-primary me-2"></i>Input Pinjaman Baru</h5>
                     <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body p-4">
                     <div class="mb-3">
-                        <label class="form-label small fw-bold">PILIH SISWA</label>
-                        <select name="id" class="form-select bg-light border-0 py-2" required>
+                        <label class="form-label small fw-bold text-muted">PILIH SISWA</label>
+                        <select name="id" class="form-select bg-light border-0 py-2 shadow-none" required>
                             <option value="" hidden>Pilih nama siswa...</option>
                             @foreach($list_anggota as $la)
                                 <option value="{{ $la->id }}">{{ $la->nama }}</option>
@@ -206,13 +204,16 @@
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label small fw-bold">PILIH BUKU</label>
-                        <select name="id_buku" class="form-select bg-light border-0 py-2" required>
+                        <label class="form-label small fw-bold text-muted">PILIH BUKU</label>
+                        <select name="id_buku" class="form-select bg-light border-0 py-2 shadow-none" required>
                             <option value="" hidden>Pilih buku yang tersedia...</option>
                             @foreach($bukus as $b)
                                 <option value="{{ $b->id_buku }}">{{ $b->nama_buku }} (Stok: {{ $b->stok }})</option>
                             @endforeach
                         </select>
+                    </div>
+                    <div class="alert alert-warning border-0 small rounded-3 mb-0">
+                        <i class="fas fa-info-circle me-1"></i> Transaksi akan tersimpan dengan status <strong>Pending</strong>.
                     </div>
                 </div>
                 <div class="modal-footer border-0 p-4 pt-0">
@@ -224,4 +225,20 @@
         </div>
     </div>
 </div>
+
+<style>
+    .bg-soft-warning { background-color: #fff9db !important; color: #f59f00 !important; border: 1px solid #ffe066 !important; }
+    .bg-soft-success { background-color: #ebfbee !important; color: #40c057 !important; border: 1px solid #b2f2bb !important; }
+    .bg-soft-secondary { background-color: #f1f3f5 !important; color: #495057 !important; border: 1px solid #dee2e6 !important; }
+    
+    .table-responsive-scroll {
+        max-height: 60vh;
+        overflow-y: auto;
+    }
+    
+    .table-responsive-scroll::-webkit-scrollbar { width: 5px; }
+    .table-responsive-scroll::-webkit-scrollbar-thumb { background: #dee2e6; border-radius: 10px; }
+    
+    .dropdown-item:active { background-color: #4361ee; }
+</style>
 @endsection

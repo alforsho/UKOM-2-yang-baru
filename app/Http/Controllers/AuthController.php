@@ -78,6 +78,34 @@ class AuthController extends Controller
         return redirect('/login');
     }
 
+    // --- FITUR FORGET PASSWORD (BARU) ---
+
+    // Menampilkan halaman lupa password
+    public function showForgetForm() {
+        return view('auth.forget-password');
+    }
+
+    // Proses Reset Password Langsung (Berdasarkan Username)
+    public function resetPasswordLangsung(Request $request) {
+        $request->validate([
+            'username' => 'required',
+            'password' => 'required|min:5|confirmed',
+        ]);
+
+        $user = User::where('username', $request->username)->first();
+
+        if (!$user) {
+            return back()->with('error', 'Username tidak ditemukan!');
+        }
+
+        // Update password di tabel users
+        User::where('username', $request->username)->update([
+            'password' => Hash::make($request->password)
+        ]);
+
+        return redirect('/login')->with('success', 'Password berhasil direset! Silakan login.');
+    }
+
     // --- FITUR PROFIL ---
 
     // Tampilkan Halaman Profil
@@ -101,7 +129,7 @@ class AuthController extends Controller
         
         $request->validate([
             'nama' => 'required|string|max:255',
-            'password' => 'nullable|min:5|confirmed', // butuh input password_confirmation di view
+            'password' => 'nullable|min:5|confirmed',
         ]);
 
         DB::transaction(function () use ($request, $user) {

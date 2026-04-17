@@ -14,26 +14,29 @@ class CreateTransaksisTable extends Migration
     public function up()
     {
         Schema::create('transaksi', function (Blueprint $table) {
-            // 1. Primary Key: id_transaksi (bigint unsigned, auto_increment)
+            // 1. Primary Key
             $table->id('id_transaksi'); 
 
-            // 2. Foreign Key: id (bigint unsigned) menghubungkan ke tabel users
+            // 2. Foreign Key ke tabel users (Siswa/Admin)
             $table->foreignId('id')->constrained('users')->onDelete('cascade');
 
-            // 3. Foreign Key: id_buku (bigint unsigned) menghubungkan ke tabel buku
+            // 3. Foreign Key ke tabel buku (menggunakan id_buku sebagai referensi)
             $table->foreignId('id_buku')->constrained('buku', 'id_buku')->onDelete('cascade');
 
-            // 4. tanggal_peminjaman (datetime) sesuai di foto
+            // 4. Tanggal Peminjaman
             $table->dateTime('tanggal_peminjaman');
 
-            // 5. tanggal_pengembalian (datetime) sesuai di foto
-            $table->dateTime('tanggal_pengembalian');
+            // 5. Tanggal Pengembalian (Bisa dibuat nullable jika saat pinjam belum ditentukan)
+            $table->dateTime('tanggal_pengembalian')->nullable();
 
-            // 6. status (varchar 255)
-            $table->string('status', 255);
+            // 6. Status (Menambahkan default 'menunggu' untuk alur persetujuan admin)
+            $table->string('status', 255)->default('menunggu');
 
-            // 7 & 8. created_at & updated_at (timestamp, nullable)
+            // 7. created_at & updated_at
             $table->timestamps();
+
+            // 8. FITUR ARSIP: deleted_at (Penting untuk SoftDeletes)
+            $table->softDeletes();
         });
     }
 

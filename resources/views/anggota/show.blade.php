@@ -4,13 +4,21 @@
 <div class="container py-5">
     <div class="row justify-content-center">
         <div class="col-md-6">
-            {{-- Tombol Kembali --}}
+            {{-- Tombol Kembali Otomatis --}}
             <div class="mb-3 no-print">
-                <a href="/admin/anggota" class="text-decoration-none text-muted small">
-                    <i class="fas fa-arrow-left me-1"></i> Kembali ke Daftar Anggota
-                </a>
+                {{-- PERBAIKAN: Menggunakan route('profil') sesuai web.php --}}
+                @if(request()->query('from') == 'profil')
+                    <a href="{{ route('profil') }}" class="text-decoration-none text-muted small fw-bold">
+                        <i class="fas fa-arrow-left me-1"></i> Kembali ke Profil Saya
+                    </a>
+                @else
+                    <a href="{{ url('/admin/anggota') }}" class="text-decoration-none text-muted small fw-bold">
+                        <i class="fas fa-arrow-left me-1"></i> Kembali ke Daftar Anggota
+                    </a>
+                @endif
             </div>
 
+            {{-- Kartu Anggota --}}
             <div class="card border-0 shadow-lg printable-card" style="border-radius: 15px; overflow: hidden; background: white;">
                 <div class="bg-primary text-white text-center py-3">
                     <h5 class="mb-0 fw-bold">KARTU ANGGOTA PERPUSTAKAAN</h5>
@@ -21,7 +29,10 @@
                     <div class="row align-items-center">
                         <div class="col-4 text-center border-end">
                             <div class="mx-auto bg-light rounded-circle d-flex align-items-center justify-content-center mb-2" style="width: 80px; height: 80px; border: 2px solid #eee;">
-                                <i class="fas fa-user text-secondary" style="font-size: 2rem;"></i>
+                                {{-- Avatar Otomatis --}}
+                                <span class="text-primary fw-bold" style="font-size: 2rem;">
+                                    {{ strtoupper(substr($anggota->nama, 0, 1)) }}
+                                </span>
                             </div>
                             <span class="badge bg-primary rounded-pill small">
                                 ID #{{ str_pad($anggota->id, 5, '0', STR_PAD_LEFT) }}
@@ -56,9 +67,10 @@
                 </div>
             </div>
             
+            {{-- Tombol Aksi --}}
             <div class="d-grid gap-2 mt-4 no-print">
-                <button onclick="window.print()" class="btn btn-primary shadow-sm">
-                    <i class="fas fa-print me-2"></i> Cetak Sekarang
+                <button onclick="window.print()" class="btn btn-primary shadow-sm py-2 fw-bold">
+                    <i class="fas fa-print me-2"></i> Cetak Kartu Anggota
                 </button>
             </div>
         </div>
@@ -70,34 +82,37 @@
     
     /* CSS UNTUK TAMPILAN PRINT */
     @media print {
-        /* Sembunyikan semua kecuali kartu */
         body * { visibility: hidden; }
         .printable-card, .printable-card * { visibility: visible; }
         
-        /* Posisi kartu di kertas */
         .printable-card {
             visibility: visible;
             position: absolute;
             left: 50%;
             top: 50px;
             transform: translateX(-50%);
-            width: 8.5cm; /* Ukuran standar kartu ID */
-            border: 1px solid #000 !important;
+            width: 8.5cm;
+            border: 1px solid #ddd !important;
             box-shadow: none !important;
             border-radius: 10px !important;
         }
 
-        /* Pastikan warna tetap muncul */
         .bg-primary {
             background-color: #0d6efd !important;
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
         }
         
+        .bg-light {
+            background-color: #f8f9fa !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
         .text-white { color: white !important; }
         .text-muted { color: #6c757d !important; }
+        .badge { border: 1px solid #0d6efd !important; }
         
-        /* Hilangkan scroll bar */
         html, body {
             overflow: visible !important;
             height: auto !important;

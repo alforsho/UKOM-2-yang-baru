@@ -34,12 +34,7 @@
                                         <small class="text-muted fw-semibold">Limit Buku</small>
                                     </div>
                                 </div>
-                                <div class="col-6">
-                                    <div class="p-3 rounded-4 bg-light border-0 text-center">
-                                        <h3 class="fw-bold text-success mb-0">Aktif</h3>
-                                        <small class="text-muted fw-semibold">Status Akun</small>
-                                    </div>
-                                </div>
+                            
                             </div>
                         </div>
                     </div>

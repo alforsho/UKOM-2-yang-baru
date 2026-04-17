@@ -45,11 +45,12 @@ class AnggotaController extends Controller
     }
 
     /**
-     * DETAIL ANGGOTA (Hanya Profil)
+     * DETAIL ANGGOTA & CETAK PROFIL
+     * Menangani view dari sisi Admin maupun sisi Profil Siswa
      */
-    public function show($id)
+    public function show(Request $request, $id)
     {
-        // Mengambil data profil gabungan tanpa riwayat transaksi
+        // Mengambil data profil gabungan
         $anggota = DB::table('users')
             ->leftJoin('anggota', 'users.id', '=', 'anggota.user_id')
             ->select(
@@ -67,11 +68,15 @@ class AnggotaController extends Controller
             ->first();
 
         if (!$anggota) {
-            return redirect('/admin/anggota')->with('error', 'Data tidak ditemukan!');
+            return redirect()->back()->with('error', 'Data tidak ditemukan!');
         }
 
-        // Hanya mengirim variabel anggota ke view
-        return view('anggota.show', compact('anggota'));
+        
+        // Contoh: /admin/anggota/show/5?from=profil
+        $redirect = $request->query('from', 'admin'); 
+
+        // Mengirim variabel anggota dan redirect ke view yang sama
+        return view('anggota.show', compact('anggota', 'redirect'));
     }
 
     /**
@@ -104,6 +109,7 @@ class AnggotaController extends Controller
                     'nama_anggota' => $request->nama,
                     'kelas'        => $request->kelas,
                     'jurusan'      => $request->jurusan,
+                    'no_telp'      => $request->no_telp,
                     'created_at'   => now(),
                 ]);
             }
@@ -144,6 +150,7 @@ class AnggotaController extends Controller
                         'nis'        => $request->nis,
                         'kelas'      => $request->kelas,
                         'jurusan'    => $request->jurusan,
+                        'no_telp'    => $request->no_telp,
                         'updated_at' => now(),
                     ]
                 );
@@ -161,8 +168,6 @@ class AnggotaController extends Controller
      */
     public function destroy($id)
     {
-        // Cascade delete akan bekerja jika foreign key di DB diset cascade, 
-        // jika tidak, hapus manual anggotanya dulu baru usernya.
         DB::table('anggota')->where('user_id', $id)->delete();
         DB::table('users')->where('id', $id)->delete();
 
